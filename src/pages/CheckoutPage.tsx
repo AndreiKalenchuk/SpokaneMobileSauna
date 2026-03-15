@@ -487,11 +487,9 @@ function CustomerInfoForm({
 function PaymentForm({
   total,
   bookingId,
-  onSuccess,
 }: {
   total: number
   bookingId: string
-  onSuccess: (bookingId: string) => void
 }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -524,8 +522,6 @@ function PaymentForm({
     }
   }
 
-  const isMocked = !stripe || !elements
-
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {paymentError && (
@@ -539,26 +535,10 @@ function PaymentForm({
       )}
 
       <div className="rounded-lg border bg-card p-4">
-        {isMocked ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CreditCard className="size-4" />
-              <span>Payment processing will be connected in the next step</span>
-            </div>
-            <div className="space-y-2 opacity-50 pointer-events-none">
-              <div className="h-10 rounded border bg-muted" />
-              <div className="grid grid-cols-2 gap-2">
-                <div className="h-10 rounded border bg-muted" />
-                <div className="h-10 rounded border bg-muted" />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <PaymentElement
-            onReady={() => setPaymentReady(true)}
-            options={{ layout: 'tabs' }}
-          />
-        )}
+        <PaymentElement
+          onReady={() => setPaymentReady(true)}
+          options={{ layout: 'tabs' }}
+        />
       </div>
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -574,32 +554,21 @@ function PaymentForm({
         agreed to in the previous step.
       </p>
 
-      {isMocked ? (
-        <Button
-          type="button"
-          size="lg"
-          className="w-full h-12 text-base"
-          onClick={() => onSuccess(bookingId)}
-        >
-          Complete Booking — {formatCurrency(total)}
-        </Button>
-      ) : (
-        <Button
-          type="submit"
-          size="lg"
-          className="w-full h-12 text-base"
-          disabled={!stripe || isProcessing || !paymentReady}
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Processing…
-            </>
-          ) : (
-            <>Pay {formatCurrency(total)}</>
-          )}
-        </Button>
-      )}
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full h-12 text-base"
+        disabled={!stripe || isProcessing || !paymentReady}
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="mr-2 size-4 animate-spin" />
+            Processing…
+          </>
+        ) : (
+          <>Pay {formatCurrency(total)}</>
+        )}
+      </Button>
     </form>
   )
 }
@@ -681,12 +650,7 @@ function CheckoutContent({
     }
   }
 
-  const handlePaymentSuccess = (bookingId: string) => {
-    navigate(`/booking/confirmation/${bookingId}`)
-  }
-
   const currentStepIndex = step === 'info' ? 1 : 2
-  const isMockedSecret = paymentIntent?.clientSecret === 'mock_secret_for_development'
 
   return (
     <>
@@ -784,33 +748,24 @@ function CheckoutContent({
                           </div>
                         )}
 
-                        {isMockedSecret ? (
+                        <Elements
+                          stripe={stripePromise}
+                          options={{
+                            clientSecret: paymentIntent.clientSecret,
+                            appearance: {
+                              theme: 'stripe',
+                              variables: {
+                                colorPrimary: '#5C3D2E',
+                                borderRadius: '8px',
+                              },
+                            },
+                          }}
+                        >
                           <PaymentForm
                             total={calculations.total}
                             bookingId={paymentIntent.bookingId}
-                            onSuccess={handlePaymentSuccess}
                           />
-                        ) : (
-                          <Elements
-                            stripe={stripePromise}
-                            options={{
-                              clientSecret: paymentIntent.clientSecret,
-                              appearance: {
-                                theme: 'stripe',
-                                variables: {
-                                  colorPrimary: '#5C3D2E',
-                                  borderRadius: '8px',
-                                },
-                              },
-                            }}
-                          >
-                            <PaymentForm
-                              total={calculations.total}
-                              bookingId={paymentIntent.bookingId}
-                              onSuccess={handlePaymentSuccess}
-                            />
-                          </Elements>
-                        )}
+                        </Elements>
                       </CardContent>
                     </Card>
                   </motion.div>

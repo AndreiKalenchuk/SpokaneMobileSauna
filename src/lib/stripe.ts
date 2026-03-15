@@ -24,23 +24,18 @@ export interface PaymentIntentRequest {
 export interface PaymentIntentResponse {
   clientSecret: string
   bookingId: string
+  bookingNumber: string
 }
 
 export async function createPaymentIntent(
   data: PaymentIntentRequest,
 ): Promise<PaymentIntentResponse> {
-  try {
-    const { data: result, error } = await supabase.functions.invoke(
-      'create-payment-intent',
-      { body: data },
-    )
+  const { data: result, error } = await supabase.functions.invoke(
+    'create-payment-intent',
+    { body: data },
+  )
 
-    if (error) throw error
-    return result as PaymentIntentResponse
-  } catch {
-    return {
-      clientSecret: 'mock_secret_for_development',
-      bookingId: `BK-${Date.now().toString(36).toUpperCase()}`,
-    }
-  }
+  if (error) throw error
+  if (result?.error) throw new Error(result.error)
+  return result as PaymentIntentResponse
 }

@@ -80,13 +80,15 @@ export default function ContactPage() {
 
   async function onSubmit(data: ContactFormData) {
     try {
-      console.log('Contact form submission:', data)
-      await supabase.functions.invoke('contact-form', { body: data })
+      const { error } = await supabase.functions.invoke('contact-form', {
+        body: data,
+      })
+      if (error) throw error
+      toast.success("Message sent! We'll get back to you within 24 hours.")
+      reset()
     } catch {
-      // Edge function doesn't exist yet — that's fine
+      toast.error('Failed to send message. Please try again or email us directly.')
     }
-    toast.success('Message sent! We\'ll get back to you within 24 hours.')
-    reset()
   }
 
   return (
