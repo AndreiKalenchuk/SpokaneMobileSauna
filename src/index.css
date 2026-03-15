@@ -63,6 +63,22 @@
   --sidebar-ring: #5C3D2E;
 }
 
+/* Booking calendar — react-day-picker v9 overrides */
+.booking-calendar .rdp-root {
+  --rdp-accent-color: var(--primary);
+  --rdp-accent-background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.booking-calendar .rdp-month_caption {
+  position: relative;
+}
+
+.booking-calendar .rdp-chevron {
+  fill: var(--foreground);
+  width: 1rem;
+  height: 1rem;
+}
+
 @theme inline {
   --font-sans: 'Inter', sans-serif;
   --font-heading: 'Playfair Display', serif;
