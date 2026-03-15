@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout'
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const BookingPage = lazy(() => import('@/pages/BookingPage'))
+const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
 const BookingConfirmationPage = lazy(() => import('@/pages/BookingConfirmationPage'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const GalleryPage = lazy(() => import('@/pages/GalleryPage'))
@@ -29,6 +30,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/book" element={<BookingPage />} />
+          <Route path="/booking/checkout" element={<CheckoutPage />} />
           <Route path="/booking/confirmation/:id" element={<BookingConfirmationPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
