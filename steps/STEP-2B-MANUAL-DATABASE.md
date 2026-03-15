@@ -9,7 +9,7 @@ After the AI generates the migration and seed files in Step 2, run these command
 ```bash
 cd sauna-rental
 supabase init          # if not already done — creates supabase/ folder
-supabase link --project-ref YOUR_PROJECT_REF
+supabase link --project-ref lgqmeanxmmozvpkdxcjw
 ```
 
 Your project ref is the part of your Supabase URL before `.supabase.co` (e.g., `abcdefghijklm`).

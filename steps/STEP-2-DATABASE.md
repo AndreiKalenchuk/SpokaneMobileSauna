@@ -80,23 +80,24 @@ Enable Row-Level Security on ALL tables. Create these policies:
 Populate with realistic data:
 
 **Products:**
-- Mobile Sauna (primary) — "Premium wood-fired cedar sauna delivered to your location. Seats 6. Includes bucket, ladle, thermometer, towels, seat covers, and 1 bundle of firewood." — base_price: $350
-- Cold Plunge Tub (standalone) — "Ice-cold contrast therapy. 100-gallon insulated tub. Ice included." — base_price: $150
-- Cold Plunge Tub (addon) — same description — base_price: $100
-- Extra Firewood Bundle (addon) — "Additional 2–3 hours of burn time." — base_price: $15
-- Aromatherapy Kit (addon) — "Essential oils: eucalyptus, birch, lavender." — base_price: $25
+- Mobile Sauna 6 person — "Premium wood-fired cedar sauna delivered to your location. Seats 6. Includes bucket, ladle, thermometer, and firewood for 1hr session." — base_price: $229
+- Cold Plunge Tub (addon) — same description — base_price: $19
+- Extra Firewood Bundle (addon) — "Additional 30 min of burn time." — base_price: $5.99
+- Aromatherapy Kit (addon) — "Essential oils: eucalyptus, birch, lavender." — base_price: $5.99
+- Sauna whisk/venik (addon) - "To ger full transformation into authentic sauna experience." - base price: $28.99
 
 **Pricing rules for each product:**
 - Weekday (Mon–Thu, days 1–4): use base_price, priority 1
-- Weekend (Fri–Sun, days 5,6,0): Sauna $450, Cold Plunge standalone $200, Cold Plunge addon $150, priority 2
-- Holiday (specific dates for 2026): Sauna $550, Cold Plunge standalone $225, Cold Plunge addon $175, priority 3
+- Weekend (Fri–Sun, days 5,6,0): Sauna $289, priority 2
+- All addons are the same price
+- Holiday (specific dates for 2026): Sauna $319, priority 3
 - Holiday dates: 2026-01-01, 2026-05-25, 2026-07-04, 2026-09-07, 2026-11-26, 2026-12-24, 2026-12-25, 2026-12-31
 
 **10 testimonials** (4–5 star ratings, realistic names and quotes about the sauna experience)
 
 **15+ FAQs** across 4 categories: "Booking & Pricing", "Delivery & Setup", "Using the Sauna", "Payment & Cancellation". Use the FAQ content from the project's PROMPT.md reference doc if available, or generate realistic Q&As.
 
-**12 gallery images** — use Unsplash URLs for sauna/wellness/nature images. Include a mix of categories: "exterior", "interior", "events", "scenery", "cold-plunge".
+**12 gallery images** — use .jpg images from public/gallery
 
 ### 3. Create TypeScript types
 
