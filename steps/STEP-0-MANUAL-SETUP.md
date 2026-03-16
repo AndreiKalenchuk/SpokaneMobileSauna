@@ -21,16 +21,16 @@ Complete these before giving any prompts to the AI agent. Each section takes 5�
 - [ ] Wait for the project to finish provisioning (~2 minutes)
 - [ ] Go to **Settings → API** and copy these values (you'll need them in Step 1):
   - `Project URL` (looks like `https://lgqmeanxmmozvpkdxcjw.supabase.co`)
-  - `anon public` eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncW1lYW54bW1venZwa2R4Y2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1Mjc2MjAsImV4cCI6MjA4OTEwMzYyMH0.OSh3DpavVZug9gBq7rNPmxdfhts34qLBiAl270gf1XU 
-  - `service_role` eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncW1lYW54bW1venZwa2R4Y2p3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzUyNzYyMCwiZXhwIjoyMDg5MTAzNjIwfQ.ZSMgEcfMHIicOLiVwnRYQCzXnSJKUpE9b1zBHSo0Fe8
+  - `anon public`  
+  - `service_role` e8
 
 ## 3. Create Stripe Account
 
 - [ ] Go to [stripe.com](https://stripe.com) → sign up
 - [ ] You'll start in **test mode** (no real charges) — perfect for development
 - [ ] Go to **Developers → API keys** and copy:
-  - `Publishable key` pk_test_51TB204GuFwIacsDYvYubQvKjmtcHkeUczjD2QRp9IuNZAo7CI9gWF1nEbkZkzM7DzlsgxEMZI7p8yPskoP9YgLTZ00SJMrXM8l 
-  - `Secret key` sk_test_51TB204GuFwIacsDYCK1ZtduGWVmGlOMShbzJfG26g7E3v6jOZHAu4vWGl575aiRfHJn3qNl6diQZrXM3TBh5skht00u3VXzED5
+  - `Publishable key`
+  - `Secret key` 
 - [ ] **Don't** activate your account yet — do that only when you're ready to accept real payments
 
 ## 4. Create Resend Account (for emails)
