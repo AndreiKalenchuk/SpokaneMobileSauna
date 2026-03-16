@@ -20,7 +20,7 @@ Complete these before giving any prompts to the AI agent. Each section takes 5â€
 - [ ] Region: pick the closest to your customers
 - [ ] Wait for the project to finish provisioning (~2 minutes)
 - [ ] Go to **Settings â†’ API** and copy these values (you'll need them in Step 1):
-  - `Project URL` (looks like `https://lgqmeanxmmozvpkdxcjw.supabase.co`)
+  - `Project URL` (looks like `https://....supabase.co`)
   - `anon public`  
   - `service_role` e8
 
@@ -37,7 +37,7 @@ Complete these before giving any prompts to the AI agent. Each section takes 5â€
 
 - [ ] Go to [resend.com](https://resend.com) â†’ sign up
 - [ ] Go to **API Keys** â†’ create a new key
-- [ ] Copy the API key  re_3BZn6zK4_62DGtpetT7zDQNxkk1BdvSET
+- [ ] Copy the API key  
 - [ ] Note: on the free tier you can only send from `onboarding@resend.dev` until you verify your own domain. That's fine for development.
 
 ## 5. Install Supabase CLI (on your machine)
