@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
+import { ProtectedRoute } from '@/components/admin/ProtectedRoute'
+import { AdminLayout } from '@/components/admin/AdminLayout'
 
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const BookingPage = lazy(() => import('@/pages/BookingPage'))
@@ -13,7 +15,10 @@ const AboutPage = lazy(() => import('@/pages/AboutPage'))
 const ContactPage = lazy(() => import('@/pages/ContactPage'))
 const TermsPage = lazy(() => import('@/pages/TermsPage'))
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'))
+const AdminLoginPage = lazy(() => import('@/pages/admin/AdminLoginPage'))
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
+const AdminBookingsPage = lazy(() => import('@/pages/admin/AdminBookingsPage'))
+const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'))
 
 function PageLoader() {
   return (
@@ -39,7 +44,16 @@ export default function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+        </Route>
+
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/bookings" element={<AdminBookingsPage />} />
+            <Route path="/admin/settings" element={<AdminSettingsPage />} />
+          </Route>
         </Route>
       </Routes>
     </Suspense>

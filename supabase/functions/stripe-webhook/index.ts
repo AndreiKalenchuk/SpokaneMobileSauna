@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@14?target=deno'
+import Stripe from 'https://esm.sh/stripe@14?target=deno&no-check'
 import { Resend } from 'https://esm.sh/resend@2'
 
 serve(async (req) => {
@@ -15,7 +15,14 @@ serve(async (req) => {
 
     let event: Stripe.Event
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      const cryptoProvider = Stripe.createSubtleCryptoProvider()
+      event = await stripe.webhooks.constructEventAsync(
+        body,
+        signature,
+        webhookSecret,
+        undefined,
+        cryptoProvider,
+      )
     } catch (err) {
       console.error('Webhook signature verification failed:', err)
       return new Response(JSON.stringify({ error: 'Invalid signature' }), {
@@ -38,14 +45,18 @@ serve(async (req) => {
         .select('*, booking_items(*, products(name))')
         .single()
 
+      console.log('Booking update result:', { booking, bookingError })
+
       if (bookingError) {
         console.error('Failed to update booking:', bookingError)
         return new Response('OK', { status: 200 })
       }
 
       try {
-        const resend = new Resend(Deno.env.get('RESEND_API_KEY')!)
+        const resendKey = Deno.env.get('RESEND_API_KEY')
         const fromEmail = Deno.env.get('FROM_EMAIL') || 'noreply@mobilesaunarental.com'
+        console.log('Email config:', { hasResendKey: !!resendKey, fromEmail, toEmail: booking.customer_email })
+        const resend = new Resend(resendKey!)
 
         const rentalDateFormatted = new Date(
           booking.rental_date + 'T12:00:00',
@@ -68,7 +79,7 @@ serve(async (req) => {
           )
           .join('')
 
-        await resend.emails.send({
+        const emailResult = await resend.emails.send({
           from: fromEmail,
           to: booking.customer_email,
           subject: `Your Sauna Booking is Confirmed — ${booking.booking_number}`,
@@ -129,6 +140,60 @@ serve(async (req) => {
             </div>
           `,
         })
+        console.log('Customer email result:', JSON.stringify(emailResult))
+
+        const ownerEmail = Deno.env.get('OWNER_EMAIL')
+        if (ownerEmail) {
+          const ownerResult = await resend.emails.send({
+            from: fromEmail,
+            to: ownerEmail,
+            subject: `New Booking! ${booking.booking_number} — $${Number(booking.total_amount).toFixed(2)}`,
+            html: `
+              <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#333">
+                <h1 style="color:#5C3D2E">New Booking Received</h1>
+
+                <div style="background:#f9f6f3;padding:20px;border-radius:8px;margin:20px 0">
+                  <p><strong>Booking Number:</strong> ${booking.booking_number}</p>
+                  <p><strong>Customer:</strong> ${booking.customer_name}</p>
+                  <p><strong>Email:</strong> ${booking.customer_email}</p>
+                  <p><strong>Phone:</strong> ${booking.customer_phone || 'N/A'}</p>
+                  <p><strong>Rental Date:</strong> ${rentalDateFormatted}</p>
+                  <p><strong>Delivery Address:</strong> ${booking.delivery_address || 'N/A'}</p>
+                  ${booking.notes ? `<p><strong>Notes:</strong> ${booking.notes}</p>` : ''}
+                </div>
+
+                <table style="width:100%;border-collapse:collapse;margin:20px 0">
+                  <thead>
+                    <tr style="background:#5C3D2E;color:#fff">
+                      <th style="padding:10px;text-align:left">Item</th>
+                      <th style="padding:10px;text-align:center">Qty</th>
+                      <th style="padding:10px;text-align:right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${booking.booking_items.map((item: { products: { name: string }; quantity: number; total_price: number }) =>
+                      `<tr>
+                        <td style="padding:8px;border-bottom:1px solid #eee">${item.products.name}</td>
+                        <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${item.quantity}</td>
+                        <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">$${Number(item.total_price).toFixed(2)}</td>
+                      </tr>`
+                    ).join('')}
+                  </tbody>
+                </table>
+
+                <p style="font-size:1.2em;font-weight:bold;color:#5C3D2E">
+                  Total: $${Number(booking.total_amount).toFixed(2)}
+                </p>
+
+                <p style="margin-top:20px;color:#888;font-size:0.9em">
+                  View in <a href="https://supabase.com/dashboard/project/lgqmeanxmmozvpkdxcjw/editor">Supabase Dashboard</a>
+                  | <a href="https://dashboard.stripe.com/test/payments">Stripe Dashboard</a>
+                </p>
+              </div>
+            `,
+          })
+          console.log('Owner email result:', JSON.stringify(ownerResult))
+        }
       } catch (emailErr) {
         console.error('Failed to send confirmation email:', emailErr)
       }

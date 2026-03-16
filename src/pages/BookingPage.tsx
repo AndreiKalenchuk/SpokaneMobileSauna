@@ -13,7 +13,6 @@ import {
   Shield,
   Thermometer,
   Users,
-  Lock,
   Wrench,
   Minus,
   Plus,
@@ -225,24 +224,13 @@ function createCustomDayButton(
       >
         <span className={cn(
           'text-sm leading-none',
-          isBooked && 'line-through text-muted-foreground',
-          isBlocked && 'text-muted-foreground',
+          (isBooked || isBlocked) && 'line-through text-muted-foreground',
         )}>
           {date.getDate()}
         </span>
 
-        {isBooked && (
-          <span className="text-[9px] leading-none text-muted-foreground mt-0.5">Booked</span>
-        )}
-
-        {isBlocked && (
-          <span className="mt-0.5 flex items-center gap-0.5">
-            {blockedReasons.get(dateStr)?.toLowerCase().includes('maintenance') ? (
-              <Wrench className="size-2.5 text-muted-foreground" />
-            ) : (
-              <Lock className="size-2.5 text-muted-foreground" />
-            )}
-          </span>
+        {(isBooked || isBlocked) && (
+          <span className="size-1.5 rounded-full bg-muted-foreground/40 mt-1" />
         )}
 
         {!isBooked && !isBlocked && !isDisabled && price !== null && (

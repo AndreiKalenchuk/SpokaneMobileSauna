@@ -22,24 +22,23 @@ Build the Booking page at `src/pages/BookingPage.tsx` with an interactive calend
 
 1. **Rental Description Panel** (collapsible on mobile)
    What's included in every rental:
-   - 24-hour rental period (delivered 10 AM, pickup next day 10 AM)
+   - Daily rental period (delivered before 2PM, pickup next day after 10 AM)
    - Free delivery within 20 miles
    - Professional setup & teardown
    - Safety orientation walkthrough
    - Cedar bucket, ladle, thermometer
    - Seating for up to 6
-   - 1 bundle of firewood (~2–3 hours burn time)
-   - Towels and seat covers
-   - Fine print: "Flat, accessible surface required. 10ft clearance from structures."
+   - Firewood to build a temperature(~1h) and 40 min sauna session.
+   - Fine print: "Up to 15% slope, accessible surface required. 4ft clearance from structures."
 
 2. **Interactive Calendar** using `react-day-picker`
    - Month grid view with navigation arrows
    - Fetch data using `useAvailability()` and `usePricingRules()`
    - Use `getPriceForDate()` from `src/lib/pricing.ts` to show prices
    - **Date cell visual states:**
-     - Available (weekday): clickable, show price "$350" in small text below date number, default styling
-     - Available (weekend): clickable, show price "$450", slightly different accent color (amber tint)
-     - Holiday: clickable, show price "$550", gold badge/accent
+     - Available (weekday): clickable, show price "$229" in small text below date number, default styling
+     - Available (weekend): clickable, show price "$289", slightly different accent color (amber tint)
+     - Holiday: clickable, show price "$319", gold badge/accent
      - Booked/Unavailable: grayed out, strikethrough, not clickable
      - Blocked: grayed out with a small lock or wrench icon
      - Selected: primary brand color ring/fill
@@ -53,18 +52,17 @@ Updates dynamically when a date is selected:
 
 1. **Selected date** displayed prominently: "Saturday, March 21, 2026"
 2. **Main product line item:**
-   - Mobile Sauna (1 × $450.00) ........ $450.00
+   - Mobile Sauna (1 × $319.00) ........ $319.00
 3. **Add-Ons section:**
    Fetch add-on products from Supabase. Each as a toggleable card:
    - Checkbox + image thumbnail + name + short description + price for selected date
-   - Cold Plunge Tub: "+$150.00" (price varies by date)
-   - Extra Firewood Bundle: "+$15.00" with quantity selector (1–5)
-   - Aromatherapy Kit: "+$25.00"
+   - Extra Firewood Bundle: "+5.99" with quantity selector (1–5)
+   - Aromatherapy Kit: "+$5.99"
    - Add-on prices must also use `getPriceForDate()` for the selected date
-4. **Delivery distance** (optional input — address or mile estimate, adds surcharge if >20 miles at $3/mile)
+4. **Delivery distance** (address or mile estimate by zip, adds surcharge if >20 miles at $2.99/mile)
 5. **Price summary:**
    - Subtotal
-   - Tax (calculate at a configurable rate, e.g., 8%)
+   - Tax (calculate at a configurable rate, e.g., 8%) business located in Spokane WA
    - **Total** (bold, large)
 6. **"Continue to Checkout" button** — disabled until a date is selected. Links to the checkout step (Step 6).
 

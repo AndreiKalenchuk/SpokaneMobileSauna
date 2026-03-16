@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# Sauna Rental Booking
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite app with Supabase backend and Stripe payments.
 
-Currently, two official plugins are available:
+## Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Making Database Changes
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Standard Flow
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+supabase migration new my_change_name
+# edit the generated file in supabase/migrations/ with your SQL
+supabase db push
 ```
+
+- `supabase db push` only runs **new** migrations — it won't re-run ones already applied
+- Always keep a migration file in your repo for every schema change, regardless of how you apply it
+- If you need to set the DB password for CLI access: `export SUPABASE_DB_PASSWORD='your-password'`
+
+## Corporate Proxy Workaround
+
+If `supabase` CLI commands fail with "Service Unavailable", it's the corporate PAC proxy
+(`directvpac.blob.core.windows.net`) blocking outbound HTTPS to `api.supabase.com`.
+
+**Fix — prefix any supabase command with `NO_PROXY="*"`:**
+
+```bash
+NO_PROXY="*" supabase db push
+NO_PROXY="*" supabase secrets set MY_KEY=my_value
+NO_PROXY="*" supabase functions deploy my-function
+```
+
+Or set it for the whole terminal session:
+
+```bash
+export NO_PROXY="*"
+```
+
+To make it permanent, add `export NO_PROXY="*"` to `~/.zshrc`.
+
+### Fallback — Use the Dashboard
+
+If the CLI still fails:
+
+1. **Migrations:** Create the migration file locally, then go to **Supabase Dashboard → SQL Editor** and paste + run the same SQL manually
+2. **Secrets:** Go to **Supabase Dashboard → Edge Functions → Manage Secrets** and add them via the UI
+3. Commit the migration file to your repo

@@ -20,6 +20,7 @@ Choose whichever provides the best UX. The key is: the user should not lose thei
 ### Order Summary (sticky sidebar on desktop, collapsible on mobile)
 - Selected date
 - All line items (sauna + add-ons with quantities)
+- calculate tax(8.9%) but dont show it to user
 - Subtotal, tax, total
 - "Edit" link to go back to the calendar
 

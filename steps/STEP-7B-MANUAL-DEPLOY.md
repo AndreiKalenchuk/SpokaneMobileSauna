@@ -7,11 +7,11 @@ After the AI writes the Edge Functions in Step 7, deploy them and wire up Stripe
 ## 1. Set Supabase Secrets
 
 ```bash
-supabase secrets set STRIPE_SECRET_KEY=sk_test_YOUR_KEY
+supabase secrets set STRIPE_SECRET_KEY=sk_test_51TB204GuFwIacsDYCK1ZtduGWVmGlOMShbzJfG26g7E3v6jOZHAu4vWGl575aiRfHJn3qNl6diQZrXM3TBh5skht00u3VXzED5
 supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_PLACEHOLDER
-supabase secrets set RESEND_API_KEY=re_YOUR_KEY
-supabase secrets set FROM_EMAIL=bookings@yoursaunarental.com
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJ_YOUR_SERVICE_ROLE_KEY
+supabase secrets set RESEND_API_KEY=re_3BZn6zK4_62DGtpetT7zDQNxkk1BdvSET
+supabase secrets set FROM_EMAIL=velez.housing.llc@gmail.com
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncW1lYW54bW1venZwa2R4Y2p3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzUyNzYyMCwiZXhwIjoyMDg5MTAzNjIwfQ.ZSMgEcfMHIicOLiVwnRYQCzXnSJKUpE9b1zBHSo0Fe8
 ```
 
 Note: `STRIPE_WEBHOOK_SECRET` is a placeholder — you'll get the real one in step 3 below.
@@ -42,7 +42,7 @@ https://YOUR_PROJECT_REF.supabase.co/functions/v1/stripe-webhook
 - [ ] **Copy the "Signing secret"** (starts with `whsec_...`)
 - [ ] Update the Supabase secret with the real value:
   ```bash
-  supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_REAL_SECRET
+  supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_DtFBZreF4tLTLZS0YbOyShzGXCZbtHiO
   ```
 
 ## 4. Test the Full Flow

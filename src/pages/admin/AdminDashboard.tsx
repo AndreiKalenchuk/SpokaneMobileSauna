@@ -1,19 +1,125 @@
-import { Helmet } from 'react-helmet-async'
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { CalendarRange, DollarSign, TrendingUp, Clock } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+
+interface DashboardStats {
+  monthlyBookings: number
+  monthlyRevenue: number
+  upcomingBookings: number
+  todayBooking: string | null
+}
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchStats() {
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .split('T')[0]
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        .toISOString()
+        .split('T')[0]
+      const today = now.toISOString().split('T')[0]
+      const nextWeek = new Date(now.getTime() + 7 * 86400000)
+        .toISOString()
+        .split('T')[0]
+
+      const [monthlyRes, upcomingRes, todayRes] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select('id, total_amount')
+          .gte('rental_date', startOfMonth)
+          .lte('rental_date', endOfMonth)
+          .in('status', ['confirmed', 'completed']),
+        supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true })
+          .gte('rental_date', today)
+          .lte('rental_date', nextWeek)
+          .in('status', ['confirmed']),
+        supabase
+          .from('bookings')
+          .select('customer_name')
+          .eq('rental_date', today)
+          .in('status', ['confirmed', 'completed'])
+          .limit(1)
+          .maybeSingle(),
+      ])
+
+      const monthlyBookings = monthlyRes.data?.length ?? 0
+      const monthlyRevenue =
+        monthlyRes.data?.reduce((sum, b) => sum + (b.total_amount ?? 0), 0) ?? 0
+
+      setStats({
+        monthlyBookings,
+        monthlyRevenue,
+        upcomingBookings: upcomingRes.count ?? 0,
+        todayBooking: todayRes.data?.customer_name ?? null,
+      })
+      setLoading(false)
+    }
+
+    fetchStats()
+  }, [])
+
+  const cards = [
+    {
+      title: 'Bookings This Month',
+      value: stats?.monthlyBookings ?? 0,
+      icon: CalendarRange,
+      format: (v: number) => String(v),
+    },
+    {
+      title: 'Revenue This Month',
+      value: stats?.monthlyRevenue ?? 0,
+      icon: DollarSign,
+      format: (v: number) => `$${v.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      title: 'Upcoming (7 days)',
+      value: stats?.upcomingBookings ?? 0,
+      icon: TrendingUp,
+      format: (v: number) => String(v),
+    },
+    {
+      title: "Today's Booking",
+      value: stats?.todayBooking ?? 'None',
+      icon: Clock,
+      format: (v: string) => v,
+    },
+  ]
+
   return (
-    <>
-      <Helmet>
-        <title>Admin Dashboard | Mobile Sauna Rental</title>
-      </Helmet>
-      <main className="flex min-h-[60vh] flex-col items-center justify-center px-6 py-24">
-        <h1 className="text-4xl md:text-5xl font-bold text-center">
-          Admin Dashboard
-        </h1>
-        <p className="mt-4 text-lg text-muted-foreground text-center max-w-2xl">
-          Manage bookings, products, and settings.
-        </p>
-      </main>
-    </>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((card) => (
+          <Card key={card.title}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {card.title}
+              </CardTitle>
+              <card.icon className="size-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-7 w-24" />
+              ) : (
+                <p className="text-2xl font-bold">
+                  {/* @ts-expect-error — format is polymorphic over card type */}
+                  {card.format(card.value)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   )
 }

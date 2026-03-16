@@ -84,7 +84,7 @@ export default function ContactPage() {
         body: data,
       })
       if (error) throw error
-      toast.success("Message sent! We'll get back to you within 24 hours.")
+      toast.success("Message sent! We usually respond within 2–4 hours during business hours.")
       reset()
     } catch {
       toast.error('Failed to send message. Please try again or email us directly.')
