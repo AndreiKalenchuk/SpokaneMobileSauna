@@ -28,10 +28,6 @@ Scaffold a React + Vite + TypeScript project for a mobile sauna rental website. 
 4. Install all dependencies listed above
 5. Create a `.env.example` file with these variables (empty values):
    ```
-   VITE_SUPABASE_URL='https://lgqmeanxmmozvpkdxcjw.supabase.co'
-   VITE_SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncW1lYW54bW1venZwa2R4Y2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1Mjc2MjAsImV4cCI6MjA4OTEwMzYyMH0.OSh3DpavVZug9gBq7rNPmxdfhts34qLBiAl270gf1XU'
-   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51TB204GuFwIacsDYvYubQvKjmtcHkeUczjD2QRp9IuNZAo7CI9gWF1nEbkZkzM7DzlsgxEMZI7p8yPskoP9YgLTZ00SJMrXM8l
-   VITE_SITE_URL=http://localhost:5173
    ```
 6. Create `src/lib/supabase.ts` — initialize and export the Supabase client using `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from env
 7. Create `src/lib/stripe.ts` — export a `loadStripe()` promise using `VITE_STRIPE_PUBLISHABLE_KEY`
