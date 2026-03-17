@@ -4,14 +4,14 @@
 
 ## Context
 
-Mobile sauna rental website. React + Vite + TypeScript + Tailwind. All pages and functionality are built. Now optimize for search engines, performance, and final visual polish.
+Mobile sauna rental website. React + Vite + TypeScript + Tailwind. All pages and functionality are built. Now optimize for search engines, performance, and final visual polish. Business Name is Spokane cider mobile sauna, offers a mobile sauna 6 person with wood berning stove and adons ad venik, firewood essential oils rental, sauna delivers to you in any area in spokane and closest cites or out of area for additional change. Sauna has health benefits and good for muscles recovery
 
 ## Tasks
 
 ### SEO
 
 1. **Verify `react-helmet-async`** is set on every page with unique:
-   - `<title>` — e.g., "Book Your Mobile Sauna — [Business Name]"
+   - `<title>` — e.g., "Book Your Mobile Sauna — [Business Name]" // Business Name is Spokane mobile sauna
    - `<meta name="description">` — unique per page, 150–160 chars
    - `<meta property="og:title">`, `og:description`, `og:image`, `og:url`
    - `<meta name="twitter:card" content="summary_large_image">`
