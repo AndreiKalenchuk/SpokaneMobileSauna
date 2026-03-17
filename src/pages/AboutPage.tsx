@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { motion } from 'framer-motion'
 import {
   Heart,
@@ -66,14 +67,24 @@ export default function AboutPage() {
   return (
     <>
       <Helmet>
-        <title>About Us | Mobile Sauna Rental</title>
+        <title>About Us — {SITE_NAME}</title>
         <meta
           name="description"
           content="Learn about our passion for sauna culture, wellness, and community. Discover our handcrafted cedar sauna and what drives us."
         />
+        <meta property="og:title" content={`About Us — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="Learn about our passion for sauna culture, wellness, and community. Discover our handcrafted cedar sauna."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/about')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/about')} />
       </Helmet>
 
-      <main>
+      <div>
         {/* Our Story */}
         <section className="py-16 md:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -86,6 +97,10 @@ export default function AboutPage() {
                 <img
                   src="https://images.unsplash.com/photo-1554244933-d876deb6b2ff?auto=format&fit=crop&w=800&q=80"
                   alt="Our founders"
+                  width={800}
+                  height={600}
+                  loading="lazy"
+                  decoding="async"
                   className="aspect-[4/3] w-full rounded-2xl object-cover shadow-lg"
                 />
               </motion.div>
@@ -150,16 +165,28 @@ export default function AboutPage() {
                 <img
                   src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80"
                   alt="Sauna interior with cedar benches"
+                  width={600}
+                  height={600}
+                  loading="lazy"
+                  decoding="async"
                   className="aspect-square w-full rounded-xl object-cover"
                 />
                 <img
                   src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80"
                   alt="Sauna exterior view"
+                  width={600}
+                  height={600}
+                  loading="lazy"
+                  decoding="async"
                   className="aspect-square w-full rounded-xl object-cover"
                 />
                 <img
                   src="https://images.unsplash.com/photo-1554244933-d876deb6b2ff?auto=format&fit=crop&w=600&q=80"
                   alt="Sauna stove detail"
+                  width={600}
+                  height={300}
+                  loading="lazy"
+                  decoding="async"
                   className="col-span-2 aspect-[2/1] w-full rounded-xl object-cover"
                 />
               </motion.div>
@@ -288,7 +315,7 @@ export default function AboutPage() {
             </Button>
           </motion.div>
         </section>
-      </main>
+      </div>
     </>
   )
 }

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -655,10 +656,24 @@ function CheckoutContent({
   return (
     <>
       <Helmet>
-        <title>Checkout — Mobile Sauna Rental</title>
+        <title>Checkout — {SITE_NAME}</title>
+        <meta
+          name="description"
+          content="Complete your mobile sauna rental. Enter delivery details and payment to confirm your booking."
+        />
+        <meta property="og:title" content={`Checkout — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="Complete your mobile sauna rental. Enter delivery details and payment to confirm your booking."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/booking/checkout')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/booking/checkout')} />
       </Helmet>
 
-      <main className="py-12 md:py-20">
+      <div className="py-12 md:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           {/* Step Indicator */}
           <motion.div
@@ -794,7 +809,7 @@ function CheckoutContent({
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   )
 }
@@ -811,13 +826,13 @@ export default function CheckoutPage() {
 
   if (productsLoading || pricingLoading) {
     return (
-      <main className="py-12 md:py-20">
+      <div className="py-12 md:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex min-h-[40vh] items-center justify-center">
             <Loader2 className="size-8 animate-spin text-primary" />
           </div>
         </div>
-      </main>
+      </div>
     )
   }
 

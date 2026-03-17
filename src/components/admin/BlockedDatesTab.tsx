@@ -55,7 +55,6 @@ function createAdminDayButton(
 
     let bg = ''
     let text = ''
-    let label = ''
     if (modifiers.selected) {
       bg = 'bg-primary'
       text = 'text-primary-foreground'
@@ -65,11 +64,9 @@ function createAdminDayButton(
     } else if (blocked) {
       bg = 'bg-red-50'
       text = 'text-red-700'
-      label = 'Blocked'
     } else if (booked) {
       bg = 'bg-amber-50'
       text = 'text-amber-800'
-      label = 'Booked'
     } else if (available) {
       bg = 'bg-emerald-50'
       text = 'text-emerald-800'

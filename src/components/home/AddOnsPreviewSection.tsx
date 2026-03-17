@@ -55,8 +55,12 @@ export function AddOnsPreviewSection() {
                 className="w-60 shrink-0 snap-start rounded-2xl border bg-card transition-shadow hover:shadow-md md:w-auto"
               >
                 <img
-                  src={addon.image_url ?? '/gallery/sauna-exterior.jpg'}
+                  src={addon.image_url ?? '/gallery/exterior/exterior-1.jpg'}
                   alt={addon.name}
+                  width={256}
+                  height={256}
+                  loading="lazy"
+                  decoding="async"
                   className="aspect-square w-full rounded-t-2xl object-cover"
                 />
                 <div className="p-4">

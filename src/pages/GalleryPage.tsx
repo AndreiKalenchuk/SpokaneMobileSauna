@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { motion } from 'framer-motion'
 import Lightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
@@ -50,14 +51,24 @@ export default function GalleryPage() {
   return (
     <>
       <Helmet>
-        <title>Gallery | Mobile Sauna Rental</title>
+        <title>Gallery — {SITE_NAME}</title>
         <meta
           name="description"
           content="See our mobile sauna in action — from backyard retreats to lakeside escapes. Browse exterior, interior, event, and scenery photos."
         />
+        <meta property="og:title" content={`Gallery — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="See our mobile sauna in action — from backyard retreats to lakeside escapes. Browse exterior, interior, event, and scenery photos."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/gallery')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/gallery')} />
       </Helmet>
 
-      <main className="py-16 md:py-24">
+      <div className="py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
@@ -118,13 +129,16 @@ export default function GalleryPage() {
                 <motion.div
                   key={img.id}
                   variants={item}
-                  className="group cursor-pointer break-inside-avoid overflow-hidden rounded-xl"
+                  className="group relative cursor-pointer break-inside-avoid overflow-hidden rounded-xl"
                   onClick={() => setLightboxIndex(i)}
                 >
                   <img
                     src={img.url}
                     alt={img.alt_text ?? ''}
+                    width={400}
+                    height={300}
                     loading="lazy"
+                    decoding="async"
                     className="w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   {img.caption && (
@@ -168,7 +182,7 @@ export default function GalleryPage() {
             </Button>
           </motion.div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

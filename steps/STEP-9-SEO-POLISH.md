@@ -5,6 +5,8 @@
 ## Context
 
 Mobile sauna rental website. React + Vite + TypeScript + Tailwind. All pages and functionality are built. Now optimize for search engines, performance, and final visual polish. Business Name is Spokane cider mobile sauna, offers a mobile sauna 6 person with wood berning stove and adons ad venik, firewood essential oils rental, sauna delivers to you in any area in spokane and closest cites or out of area for additional change. Sauna has health benefits and good for muscles recovery
+url: spokanemobilesauna.com that will be connected to the web site after deployed.
+I want you to create a plan how to optimize web site for google, I have facebook page and instagram that will add later, crete a list of what Do I need to do later as: 1: update facebook page and instagram links  and so on
 
 ## Tasks
 
@@ -27,7 +29,7 @@ Mobile sauna rental website. React + Vite + TypeScript + Tailwind. All pages and
      ```
      User-agent: *
      Allow: /
-     Sitemap: https://yoursaunarental.com/sitemap.xml
+     Sitemap: https://spokanemobilesauna.com/sitemap.xml
      ```
    - `sitemap.xml` — list all public page URLs with `<lastmod>` dates
 
@@ -62,6 +64,19 @@ Mobile sauna rental website. React + Vite + TypeScript + Tailwind. All pages and
 12. **Favicon** — add a favicon (can be a simple sauna/flame icon). Place `favicon.ico` and `favicon.svg` in `public/`. Add Apple touch icon.
 
 13. **Open Graph image** — create a default OG image (1200×630px) at `public/og-image.jpg` — can be a placeholder for now, the owner will replace it with a real sauna photo.
+
+## Post-Launch To-Do (Owner Checklist)
+
+After deployment, complete these tasks:
+
+1. **Update `VITE_SITE_URL`** env var to `https://spokanemobilesauna.com` (or your final domain)
+2. **Replace placeholder `og-image.jpg`** with a real sauna photo (1200×630px) in `public/`
+3. **Update Facebook page link** in Footer and Contact page (replace `#` with your Facebook URL)
+4. **Update Instagram link** in Footer and Contact page (replace `#` with your Instagram URL)
+5. **Replace placeholder contact info** — phone `(555) 123-4567` and email in Footer, Contact, `src/lib/site-config.ts`, and LocalBusiness JSON-LD schema
+6. **Google Search Console** — submit sitemap, request indexing
+7. **Update sitemap/robots** — ensure `public/sitemap.xml` and `public/robots.txt` use your final domain
+8. **Consider Netlify prerendering** for crawler bots (see REFERENCE.md)
 
 ## Expected result
 

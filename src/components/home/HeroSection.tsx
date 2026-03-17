@@ -15,6 +15,8 @@ export function HeroSection() {
       <img
         src="https://images.unsplash.com/photo-1554244933-d876deb6b2ff?auto=format&fit=crop&w=2000&q=80"
         alt=""
+        width={2000}
+        height={1333}
         className="absolute inset-0 h-full w-full object-cover"
       />
 

@@ -132,9 +132,6 @@ export function PricingRulesTab() {
     closeDialog()
   }
 
-  function getProductName(productId: string) {
-    return products.find((p) => p.id === productId)?.name ?? 'Unknown'
-  }
 
   const grouped = products
     .map((product) => ({

@@ -4,23 +4,23 @@
 INSERT INTO products (id, name, slug, description, type, base_price, image_url, is_active, sort_order) VALUES
   ('a1b2c3d4-0001-4000-8000-000000000001', 'Mobile Sauna 6 Person', 'mobile-sauna-6-person',
    'Premium wood-fired cedar sauna delivered to your location. Seats 6. Includes bucket, ladle, thermometer, and firewood for 1hr session.',
-   'primary', 229.00, '/gallery/sauna-exterior.jpg', true, 1),
+   'primary', 229.00, '/gallery/exterior/exterior-1.jpg', true, 1),
 
   ('a1b2c3d4-0002-4000-8000-000000000002', 'Cold Plunge Tub', 'cold-plunge-tub',
    'Refreshing cold plunge tub to complement your sauna session. The ultimate contrast therapy experience.',
-   'addon', 19.00, '/gallery/cold-plunge.jpg', true, 2),
+   'addon', 19.00, '/gallery/exterior/exterior-2.jpg', true, 2),
 
   ('a1b2c3d4-0003-4000-8000-000000000003', 'Extra Firewood Bundle', 'extra-firewood-bundle',
    'Additional 30 min of burn time.',
-   'addon', 5.99, '/gallery/firewood.jpg', true, 3),
+   'addon', 5.99, '/gallery/interior/interior-1.jpg', true, 3),
 
   ('a1b2c3d4-0004-4000-8000-000000000004', 'Aromatherapy Kit', 'aromatherapy-kit',
    'Essential oils: eucalyptus, birch, lavender.',
-   'addon', 5.99, '/gallery/aromatherapy.jpg', true, 4),
+   'addon', 5.99, '/gallery/interior/interior-2.jpg', true, 4),
 
   ('a1b2c3d4-0005-4000-8000-000000000005', 'Sauna Whisk/Venik', 'sauna-whisk-venik',
    'To get full transformation into authentic sauna experience.',
-   'addon', 28.99, '/gallery/venik.jpg', true, 5);
+   'addon', 28.99, '/gallery/interior/interior-3.jpg', true, 5);
 
 -- =============================================================================
 -- Pricing Rules
@@ -153,18 +153,24 @@ INSERT INTO coupons (code, discount_type, discount_value, max_uses, is_active) V
   ('frends-50', 'fixed', 50.00, NULL, true);
 
 -- =============================================================================
--- Gallery Images (12)
+-- Gallery Images (real photos from public/gallery)
 -- =============================================================================
 INSERT INTO gallery_images (url, alt_text, caption, category, sort_order) VALUES
-  ('/gallery/sauna-exterior.jpg', 'Mobile sauna exterior view', 'Our cedar mobile sauna ready for delivery', 'sauna', 1),
-  ('/gallery/sauna-interior.jpg', 'Sauna interior with benches', 'Handcrafted cedar benches seat up to 6', 'sauna', 2),
-  ('/gallery/sauna-stove.jpg', 'Wood-fired sauna stove', 'Authentic wood-fired heat — the real deal', 'sauna', 3),
-  ('/gallery/cold-plunge.jpg', 'Cold plunge tub setup', 'Cold plunge tub for the ultimate contrast therapy', 'plunge', 4),
-  ('/gallery/backyard-setup.jpg', 'Backyard sauna setup', 'Perfect backyard setup for a private session', 'setup', 5),
-  ('/gallery/winter-session.jpg', 'Winter sauna session', 'Nothing beats a hot sauna on a cold winter night', 'seasonal', 6),
-  ('/gallery/group-event.jpg', 'Group enjoying the sauna', 'Team-building and group events are our specialty', 'events', 7),
-  ('/gallery/sunset-sauna.jpg', 'Sauna at sunset', 'Golden hour sauna sessions are unforgettable', 'seasonal', 8),
-  ('/gallery/aromatherapy.jpg', 'Aromatherapy essential oils', 'Eucalyptus, birch, and lavender essential oils', 'accessories', 9),
-  ('/gallery/venik.jpg', 'Traditional sauna whisk', 'Authentic birch venik for the full experience', 'accessories', 10),
-  ('/gallery/firewood.jpg', 'Firewood bundle', 'Premium hardwood for consistent, long-lasting heat', 'accessories', 11),
-  ('/gallery/delivery-trailer.jpg', 'Sauna on delivery trailer', 'We deliver and set up everything for you', 'setup', 12);
+  -- Exterior
+  ('/gallery/exterior/exterior-1.jpg', 'Mobile sauna exterior view', 'Our cedar mobile sauna ready for delivery', 'exterior', 1),
+  ('/gallery/exterior/exterior-2.jpg', 'Sauna exterior at golden hour', 'Beautiful cedar exterior', 'exterior', 2),
+  ('/gallery/exterior/exterior-3.jpg', 'Mobile sauna setup', 'Ready for your backyard', 'exterior', 3),
+  ('/gallery/exterior/exterior-4.jpg', 'Sauna exterior view', 'Premium wood-fired mobile sauna', 'exterior', 4),
+  ('/gallery/exterior/exterior-5.jpg', 'Cedar sauna exterior', 'Handcrafted mobile sauna', 'exterior', 5),
+  -- Interior
+  ('/gallery/interior/interior-1.jpg', 'Sauna interior with benches', 'Handcrafted cedar benches seat up to 6', 'interior', 6),
+  ('/gallery/interior/interior-2.jpg', 'Sauna interior warm glow', 'Authentic wood-fired heat', 'interior', 7),
+  ('/gallery/interior/interior-3.jpg', 'Cedar interior detail', 'Premium cedar interior', 'interior', 8),
+  ('/gallery/interior/interior-4.jpg', 'Sauna benches and stove', 'The real sauna experience', 'interior', 9),
+  ('/gallery/interior/interior-5.jpg', 'Cozy sauna interior', 'Relax and unwind', 'interior', 10),
+  -- Video frames (extracted from sauna video)
+  ('/gallery/interior/video-frame-01.jpg', 'Sauna in action', 'Our mobile sauna in use', 'interior', 11),
+  ('/gallery/interior/video-frame-02.jpg', 'Sauna session', 'Enjoy the heat', 'interior', 12),
+  ('/gallery/interior/video-frame-03.jpg', 'Sauna warmth', 'Wood-fired authenticity', 'interior', 13),
+  ('/gallery/interior/video-frame-04.jpg', 'Sauna experience', 'Pure relaxation', 'interior', 14),
+  ('/gallery/interior/video-frame-05.jpg', 'Mobile sauna session', 'Delivered to your door', 'interior', 15);

@@ -49,8 +49,12 @@ export function FeaturedProductSection() {
             transition={{ duration: 0.6 }}
           >
             <img
-              src={primary.image_url ?? '/gallery/sauna-exterior.jpg'}
+              src={primary.image_url ?? '/gallery/exterior/exterior-1.jpg'}
               alt={primary.name}
+              width={800}
+              height={600}
+              loading="lazy"
+              decoding="async"
               className="aspect-[4/3] w-full rounded-2xl object-cover shadow-lg"
             />
           </motion.div>

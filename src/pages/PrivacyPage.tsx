@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { motion } from 'framer-motion'
 
 const sections = [
@@ -107,14 +108,24 @@ export default function PrivacyPage() {
   return (
     <>
       <Helmet>
-        <title>Privacy Policy | Mobile Sauna Rental</title>
+        <title>Privacy Policy — {SITE_NAME}</title>
         <meta
           name="description"
           content="How Mobile Sauna Rental collects, uses, and protects your personal information. Read our full privacy policy."
         />
+        <meta property="og:title" content={`Privacy Policy — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="How Mobile Sauna Rental collects, uses, and protects your personal information. Read our full privacy policy."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/privacy')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/privacy')} />
       </Helmet>
 
-      <main className="py-16 md:py-24">
+      <div className="py-16 md:py-24">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -150,7 +161,7 @@ export default function PrivacyPage() {
             ))}
           </div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

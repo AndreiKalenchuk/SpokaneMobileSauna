@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
@@ -100,14 +101,14 @@ function CheckmarkAnimation() {
 
 function ConfirmationSkeleton() {
   return (
-    <main className="py-12 md:py-20">
+    <div className="py-12 md:py-20">
       <div className="mx-auto max-w-2xl px-4 sm:px-6 text-center">
         <Skeleton className="mx-auto size-20 rounded-full" />
         <Skeleton className="mx-auto mt-6 h-10 w-72" />
         <Skeleton className="mx-auto mt-4 h-5 w-48" />
         <Skeleton className="mt-8 h-64 w-full rounded-xl" />
       </div>
-    </main>
+    </div>
   )
 }
 
@@ -158,10 +159,24 @@ export default function BookingConfirmationPage() {
   return (
     <>
       <Helmet>
-        <title>Booking Confirmed — Mobile Sauna Rental</title>
+        <title>Booking Confirmed — {SITE_NAME}</title>
+        <meta
+          name="description"
+          content="Your mobile sauna rental is confirmed. View your booking details and add to calendar."
+        />
+        <meta property="og:title" content={`Booking Confirmed — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="Your mobile sauna rental is confirmed. View your booking details and add to calendar."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl(`/booking/confirmation/${id}`)} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl(`/booking/confirmation/${id ?? ''}`)} />
       </Helmet>
 
-      <main className="py-12 md:py-20">
+      <div className="py-12 md:py-20">
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -333,7 +348,7 @@ export default function BookingConfirmationPage() {
             )}
           </motion.div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

@@ -8,7 +8,12 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      // Add after: npm install -D rollup-plugin-visualizer
+      // visualizer({ open: false, filename: 'dist/stats.html' }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

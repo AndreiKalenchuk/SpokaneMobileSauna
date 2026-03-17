@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { motion } from 'framer-motion'
 import {
   Users,
@@ -44,6 +45,8 @@ function ImageCarousel({ images, alt }: { images: string[]; alt: string }) {
       <img
         src={images[current]}
         alt={alt}
+        width={1200}
+        height={900}
         className="aspect-[4/3] w-full object-cover transition-transform duration-500"
       />
       {images.length > 1 && (
@@ -84,6 +87,10 @@ function ProductCard({ product }: { product: Product }) {
       <img
         src={product.image_url ?? placeholderImages[0]}
         alt={product.name}
+        width={400}
+        height={300}
+        loading="lazy"
+        decoding="async"
         className="aspect-[4/3] w-full object-cover"
       />
       <CardContent className="p-5">
@@ -113,6 +120,10 @@ function AddonCard({ product }: { product: Product }) {
       <img
         src={product.image_url ?? placeholderImages[0]}
         alt={product.name}
+        width={400}
+        height={400}
+        loading="lazy"
+        decoding="async"
         className="aspect-square w-full object-cover"
       />
       <CardContent className="p-4">
@@ -130,7 +141,7 @@ function AddonCard({ product }: { product: Product }) {
 
 function ProductsSkeleton() {
   return (
-    <main className="py-16 md:py-24">
+    <div className="py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-12 md:grid-cols-2">
           <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
@@ -152,7 +163,7 @@ function ProductsSkeleton() {
           ))}
         </div>
       </div>
-    </main>
+    </div>
   )
 }
 
@@ -166,17 +177,50 @@ export default function ProductsPage() {
   return (
     <>
       <Helmet>
-        <title>Our Rentals | Mobile Sauna Rental</title>
+        <title>Our Rentals — {SITE_NAME}</title>
         <meta
           name="description"
+          content="Explore our mobile sauna and add-on rentals. Premium wood-fired sauna, cold plunge tub, firewood bundles, venik, essential oils."
+        />
+        <meta property="og:title" content={`Our Rentals — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
           content="Explore our mobile sauna and add-on rentals. Premium wood-fired sauna, cold plunge tub, firewood bundles, and more."
         />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/products')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/products')} />
+        {!isLoading && products && products.length > 0 && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': products.map((p) => ({
+                '@type': 'Product',
+                name: p.name,
+                description: p.description,
+                image: p.image_url
+                  ? p.image_url.startsWith('http')
+                    ? p.image_url
+                    : fullUrl(p.image_url)
+                  : undefined,
+                offers: {
+                  '@type': 'Offer',
+                  price: p.base_price,
+                  priceCurrency: 'USD',
+                  availability: 'https://schema.org/InStock',
+                },
+              })),
+            })}
+          </script>
+        )}
       </Helmet>
 
       {isLoading ? (
         <ProductsSkeleton />
       ) : (
-        <main>
+        <div>
           {/* Hero — Primary Product */}
           {primary && (
             <section className="py-16 md:py-24">
@@ -328,7 +372,7 @@ export default function ProductsPage() {
               </div>
             </section>
           )}
-        </main>
+        </div>
       )}
     </>
   )

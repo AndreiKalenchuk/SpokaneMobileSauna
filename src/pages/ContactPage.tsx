@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -94,14 +95,24 @@ export default function ContactPage() {
   return (
     <>
       <Helmet>
-        <title>Contact | Mobile Sauna Rental</title>
+        <title>Contact — {SITE_NAME}</title>
         <meta
           name="description"
           content="Get in touch with us for bookings, questions, or partnership inquiries. Call, email, or fill out our contact form."
         />
+        <meta property="og:title" content={`Contact — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="Get in touch with us for bookings, questions, or partnership inquiries. Call, email, or fill out our contact form."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/contact')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/contact')} />
       </Helmet>
 
-      <main className="py-16 md:py-24">
+      <div className="py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
@@ -292,7 +303,7 @@ export default function ContactPage() {
             </motion.div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

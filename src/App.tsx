@@ -19,6 +19,7 @@ const AdminLoginPage = lazy(() => import('@/pages/admin/AdminLoginPage'))
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
 const AdminBookingsPage = lazy(() => import('@/pages/admin/AdminBookingsPage'))
 const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function PageLoader() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
 
         <Route path="/admin/login" element={<AdminLoginPage />} />

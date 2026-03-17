@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { motion } from 'framer-motion'
 
 const sections = [
@@ -201,14 +202,24 @@ export default function TermsPage() {
   return (
     <>
       <Helmet>
-        <title>Terms & Conditions — Mobile Sauna Rental</title>
+        <title>Terms & Conditions — {SITE_NAME}</title>
         <meta
           name="description"
           content="Rental terms and conditions for Mobile Sauna Rental. Review our booking, cancellation, fire safety, liability, and usage policies."
         />
+        <meta property="og:title" content={`Terms & Conditions — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="Rental terms and conditions for Mobile Sauna Rental. Review our booking, cancellation, fire safety, liability, and usage policies."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/terms')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/terms')} />
       </Helmet>
 
-      <main className="py-16 md:py-24">
+      <div className="py-16 md:py-24">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -240,7 +251,7 @@ export default function TermsPage() {
             ))}
           </div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

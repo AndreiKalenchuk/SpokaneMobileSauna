@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { motion } from 'framer-motion'
 import { Search } from 'lucide-react'
 import {
@@ -59,14 +60,40 @@ export default function FaqPage() {
   return (
     <>
       <Helmet>
-        <title>FAQ | Mobile Sauna Rental</title>
+        <title>FAQ — {SITE_NAME}</title>
         <meta
           name="description"
           content="Frequently asked questions about our mobile sauna rental service. Find answers about booking, pricing, delivery, setup, and more."
         />
+        <meta property="og:title" content={`FAQ — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="Frequently asked questions about our mobile sauna rental service. Find answers about booking, pricing, delivery, setup, and more."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/faq')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/faq')} />
+        {!isLoading && faqs && faqs.length > 0 && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: faqs.map((f) => ({
+                '@type': 'Question',
+                name: f.question,
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: f.answer,
+                },
+              })),
+            })}
+          </script>
+        )}
       </Helmet>
 
-      <main className="py-16 md:py-24">
+      <div className="py-16 md:py-24">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <motion.div
@@ -158,7 +185,7 @@ export default function FaqPage() {
             )}
           </div>
         </div>
-      </main>
+      </div>
     </>
   )
 }

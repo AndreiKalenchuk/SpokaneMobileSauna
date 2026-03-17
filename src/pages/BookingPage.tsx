@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
+import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { DayPicker } from 'react-day-picker'
 import type { DayButtonProps } from 'react-day-picker'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -100,7 +101,7 @@ function getDateType(
 
 function BookingSkeleton() {
   return (
-    <main className="py-12 md:py-20">
+    <div className="py-12 md:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <Skeleton className="mx-auto h-10 w-72" />
@@ -114,7 +115,7 @@ function BookingSkeleton() {
           <Skeleton className="h-[500px] w-full rounded-xl" />
         </div>
       </div>
-    </main>
+    </div>
   )
 }
 
@@ -178,7 +179,7 @@ function createCustomDayButton(
   pricingRules: PricingRule[],
   bookedDates: Set<string>,
   blockedDates: Set<string>,
-  blockedReasons: Map<string, string | null>,
+  _blockedReasons: Map<string, string | null>,
 ) {
   return function CustomDayButton({
     day,
@@ -331,6 +332,10 @@ function AddOnToggleCard({
           <img
             src={product.image_url}
             alt={product.name}
+            width={48}
+            height={48}
+            loading="lazy"
+            decoding="async"
             className="size-12 shrink-0 rounded-lg object-cover"
           />
         )}
@@ -813,14 +818,24 @@ export default function BookingPage() {
   return (
     <>
       <Helmet>
-        <title>Book Your Sauna — Mobile Sauna Rental</title>
+        <title>Book Your Sauna — {SITE_NAME}</title>
         <meta
           name="description"
           content="Select a date, customize your experience, and reserve your mobile sauna in minutes."
         />
+        <meta property="og:title" content={`Book Your Sauna — ${SITE_NAME}`} />
+        <meta
+          property="og:description"
+          content="Select a date, customize your experience, and reserve your mobile sauna in minutes."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={fullUrl('/book')} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={fullUrl('/book')} />
       </Helmet>
 
-      <main className="py-12 md:py-20">
+      <div className="py-12 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Page Header */}
           <motion.div
@@ -933,7 +948,7 @@ export default function BookingPage() {
             </motion.div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   )
 }
