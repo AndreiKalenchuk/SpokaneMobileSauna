@@ -44,6 +44,23 @@ export NO_PROXY="*"
 
 To make it permanent, add `export NO_PROXY="*"` to `~/.zshrc`.
 
+### npm Registry (for Netlify/CI)
+
+If your machine uses a custom npm registry (e.g. corporate Nexus), `npm install` can write those registry URLs into `package-lock.json`. Netlify and other CI services can’t reach private registries, so builds will fail with `ENOTFOUND` when fetching packages.
+
+**Fix — ensure this project uses the public registry:**
+
+1. Add an `.npmrc` in the project root with:
+   ```
+   registry=https://registry.npmjs.org/
+   ```
+2. If `package-lock.json` already has custom registry URLs, regenerate it:
+   ```bash
+   rm package-lock.json
+   npm install
+   ```
+3. Commit the updated `package-lock.json` and push.
+
 ### Fallback — Use the Dashboard
 
 If the CLI still fails:
