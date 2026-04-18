@@ -28,10 +28,14 @@ git push -u origin main
 - [ ] Click "Deploy"
 - [ ] Wait for the build to finish (~1–2 minutes)
 
-## 3. Enable Netlify Prerendering (for SEO)
+## 3. Install Prerender Extension (for SEO)
 
-- [ ] Go to **Site settings → Build & Deploy → Post processing → Prerendering**
-- [ ] Enable it — this serves pre-rendered HTML to search engine crawlers
+The legacy prerendering setting is deprecated. Use the new Prerender extension instead.
+
+- [ ] Install the **Prerender** extension from the [Netlify Extensions library](https://app.netlify.com/extensions)
+- [ ] If you previously enabled the legacy prerendering feature, disable it: **Site settings → Build & Deploy → Post processing → Prerendering**
+- [ ] The extension serves pre-rendered HTML to crawlers, agents, and preview services (e.g. social media), while regular visitors get your normal SPA
+- [ ] Optional: Use the [prerendering checker tool](https://www.netlify.com/products/edge/prerendering/) with your site URL to verify it works
 
 ## 4. Connect Your Custom Domain
 
