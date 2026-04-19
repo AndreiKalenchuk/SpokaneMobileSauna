@@ -6,7 +6,8 @@ import { MobileMenu } from './MobileMenu'
 
 const navLinks = [
   { label: 'Home', href: '/' },
-  { label: 'Book Now', href: '/book' },
+  { label: 'Private Sauna', href: '/book' },
+  { label: 'Community Sauna', href: '/community' },
   { label: 'Products', href: '/products' },
   { label: 'Gallery', href: '/gallery' },
   { label: 'FAQ', href: '/faq' },
@@ -62,12 +63,6 @@ export function Header() {
               </Link>
             ))}
           </nav>
-
-          <div className="hidden md:flex items-center gap-3">
-            <Button asChild>
-              <Link to="/book">Book Now</Link>
-            </Button>
-          </div>
 
           <Button
             variant="ghost"

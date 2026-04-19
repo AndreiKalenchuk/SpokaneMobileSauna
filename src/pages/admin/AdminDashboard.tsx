@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CalendarRange, DollarSign, TrendingUp, Clock } from 'lucide-react'
+import { CalendarRange, DollarSign, TrendingUp, Clock, Users } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface DashboardStats {
@@ -9,6 +9,7 @@ interface DashboardStats {
   monthlyRevenue: number
   upcomingBookings: number
   todayBooking: string | null
+  communityThisWeek: number
 }
 
 export default function AdminDashboard() {
@@ -29,7 +30,7 @@ export default function AdminDashboard() {
         .toISOString()
         .split('T')[0]
 
-      const [monthlyRes, upcomingRes, todayRes] = await Promise.all([
+      const [monthlyRes, upcomingRes, todayRes, communityRes] = await Promise.all([
         supabase
           .from('bookings')
           .select('id, total_amount')
@@ -49,17 +50,26 @@ export default function AdminDashboard() {
           .in('status', ['confirmed', 'completed'])
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from('community_bookings')
+          .select('quantity')
+          .gte('event_date', today)
+          .lte('event_date', nextWeek)
+          .in('status', ['confirmed', 'pending']),
       ])
 
       const monthlyBookings = monthlyRes.data?.length ?? 0
       const monthlyRevenue =
         monthlyRes.data?.reduce((sum, b) => sum + (b.total_amount ?? 0), 0) ?? 0
+      const communityThisWeek =
+        communityRes.data?.reduce((sum, b) => sum + (b.quantity ?? 0), 0) ?? 0
 
       setStats({
         monthlyBookings,
         monthlyRevenue,
         upcomingBookings: upcomingRes.count ?? 0,
         todayBooking: todayRes.data?.customer_name ?? null,
+        communityThisWeek,
       })
       setLoading(false)
     }
@@ -92,13 +102,19 @@ export default function AdminDashboard() {
       icon: Clock,
       format: (v: string) => v,
     },
+    {
+      title: 'Community (7 days)',
+      value: stats?.communityThisWeek ?? 0,
+      icon: Users,
+      format: (v: number) => String(v),
+    },
   ]
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((card) => (
           <Card key={card.title}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">

@@ -8,6 +8,9 @@ const HomePage = lazy(() => import('@/pages/HomePage'))
 const BookingPage = lazy(() => import('@/pages/BookingPage'))
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
 const BookingConfirmationPage = lazy(() => import('@/pages/BookingConfirmationPage'))
+const CommunitySaunaPage = lazy(() => import('@/pages/CommunitySaunaPage'))
+const CommunityCheckoutPage = lazy(() => import('@/pages/CommunityCheckoutPage'))
+const CommunityConfirmationPage = lazy(() => import('@/pages/CommunityConfirmationPage'))
 const ProductsPage = lazy(() => import('@/pages/ProductsPage'))
 const GalleryPage = lazy(() => import('@/pages/GalleryPage'))
 const FaqPage = lazy(() => import('@/pages/FaqPage'))
@@ -38,6 +41,9 @@ export default function App() {
           <Route path="/book" element={<BookingPage />} />
           <Route path="/booking/checkout" element={<CheckoutPage />} />
           <Route path="/booking/confirmation/:id" element={<BookingConfirmationPage />} />
+          <Route path="/community" element={<CommunitySaunaPage />} />
+          <Route path="/community/checkout" element={<CommunityCheckoutPage />} />
+          <Route path="/community/confirmation/:id" element={<CommunityConfirmationPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/faq" element={<FaqPage />} />

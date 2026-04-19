@@ -27,6 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { HowItWorksSection } from '@/components/home/HowItWorksSection'
 import { useProducts } from '@/hooks/useProducts'
 import { useAvailability } from '@/hooks/useAvailability'
 import { usePricingRules } from '@/hooks/usePricingRules'
@@ -834,6 +835,8 @@ export default function BookingPage() {
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href={fullUrl('/book')} />
       </Helmet>
+
+      <HowItWorksSection />
 
       <div className="py-12 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

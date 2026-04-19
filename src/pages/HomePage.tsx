@@ -7,8 +7,7 @@ import {
   CONTACT,
 } from '@/lib/site-config'
 import { HeroSection } from '@/components/home/HeroSection'
-import { HowItWorksSection } from '@/components/home/HowItWorksSection'
-import { FeaturedProductSection } from '@/components/home/FeaturedProductSection'
+import { BookingOptionsSection } from '@/components/home/BookingOptionsSection'
 import { BenefitsSection } from '@/components/home/BenefitsSection'
 import { PerfectForSection } from '@/components/home/PerfectForSection'
 import { AddOnsPreviewSection } from '@/components/home/AddOnsPreviewSection'
@@ -64,8 +63,7 @@ export default function HomePage() {
       </Helmet>
 
       <HeroSection />
-      <HowItWorksSection />
-      <FeaturedProductSection />
+      <BookingOptionsSection />
       <BenefitsSection />
       <PerfectForSection />
       <AddOnsPreviewSection />

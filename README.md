@@ -2,6 +2,12 @@
 
 React + TypeScript + Vite app with Supabase backend and Stripe payments.
 
+## Admin Guides
+
+- [Community Sauna — Admin Guide](./COMMUNITY_SAUNA_ADMIN_GUIDE.md) — how to
+  add/edit Community Sauna events, smoke-test a booking, and troubleshoot with
+  SQL.
+
 ## Getting Started
 
 ```bash

@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:unit": "vitest run src/lib",
+    "test:unit": "vitest run src/lib src/stores",
     "test:integration": "vitest run src/hooks",
     "test:watch": "vitest",
     "prepare": "husky"

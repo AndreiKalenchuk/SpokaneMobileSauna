@@ -39,3 +39,28 @@ export async function createPaymentIntent(
   if (result?.error) throw new Error(result.error)
   return result as PaymentIntentResponse
 }
+
+export interface CommunityPaymentIntentRequest {
+  event_date: string
+  slot_time: string
+  quantity: number
+  customer: {
+    name: string
+    email: string
+    phone: string
+    notes?: string
+  }
+}
+
+export async function createCommunityPaymentIntent(
+  data: CommunityPaymentIntentRequest,
+): Promise<PaymentIntentResponse> {
+  const { data: result, error } = await supabase.functions.invoke(
+    'create-community-payment-intent',
+    { body: data },
+  )
+
+  if (error) throw error
+  if (result?.error) throw new Error(result.error)
+  return result as PaymentIntentResponse
+}
