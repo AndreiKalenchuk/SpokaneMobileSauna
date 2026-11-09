@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import {
+  PRODUCT_IMAGE_TYPES,
+  deleteProductImages,
+  productImagePath,
+  uploadProductImage,
+} from '@/lib/productImages'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,7 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
-import { Pencil } from 'lucide-react'
+import { ImageOff, Loader2, Pencil, Trash2, Upload } from 'lucide-react'
 import type { Product } from '@/types'
 
 export function ProductsTab() {
@@ -28,6 +35,11 @@ export function ProductsTab() {
   const [formDescription, setFormDescription] = useState('')
   const [formPrice, setFormPrice] = useState('')
   const [formActive, setFormActive] = useState(true)
+  const [formImageUrl, setFormImageUrl] = useState<string | null>(null)
+  // Files uploaded while this dialog is open — cleaned up if not kept
+  const [pendingUploads, setPendingUploads] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function fetchProducts() {
     const { data } = await supabase
@@ -48,22 +60,43 @@ export function ProductsTab() {
     setFormDescription(product.description ?? '')
     setFormPrice(String(product.base_price))
     setFormActive(product.is_active)
+    setFormImageUrl(product.image_url)
+    setPendingUploads([])
   }
 
   function closeEdit() {
+    // Cancelled: photos uploaded in this session were never saved
+    deleteProductImages(pendingUploads)
+    setPendingUploads([])
     setEditing(null)
+  }
+
+  async function handleFile(file: File | undefined) {
+    if (!editing || !file) return
+    setUploading(true)
+    try {
+      const { path, url } = await uploadProductImage(editing.id, file)
+      setPendingUploads((prev) => [...prev, path])
+      setFormImageUrl(url)
+    } catch (err) {
+      toast.error(`Upload failed: ${err instanceof Error ? err.message : 'unknown error'}`)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   async function handleSave() {
     if (!editing) return
     setSaving(true)
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('products')
       .update({
         name: formName,
         description: formDescription || null,
         base_price: parseFloat(formPrice),
+        image_url: formImageUrl,
         is_active: formActive,
         updated_at: new Date().toISOString(),
       })
@@ -71,12 +104,25 @@ export function ProductsTab() {
       .select()
       .single()
 
-    if (data) {
-      setProducts((prev) => prev.map((p) => (p.id === data.id ? data : p)))
+    setSaving(false)
+
+    if (error || !data) {
+      toast.error(`Could not save: ${error?.message ?? 'product not found'}`)
+      return
     }
 
-    setSaving(false)
-    closeEdit()
+    // Delete stored photos that are no longer used: the replaced original and
+    // any uploads from this session that weren't the final pick
+    const keep = productImagePath(formImageUrl)
+    const replaced = productImagePath(editing.image_url)
+    await deleteProductImages(
+      [...pendingUploads, ...(replaced ? [replaced] : [])].filter((p) => p !== keep),
+    )
+
+    setProducts((prev) => prev.map((p) => (p.id === data.id ? data : p)))
+    setPendingUploads([])
+    setEditing(null)
+    toast.success('Product saved')
   }
 
   if (loading) {
@@ -95,6 +141,20 @@ export function ProductsTab() {
         <Card key={product.id}>
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
+              {product.image_url ? (
+                <img
+                  src={product.image_url}
+                  alt=""
+                  className="size-10 shrink-0 rounded-md object-cover"
+                />
+              ) : (
+                <div
+                  className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted"
+                  title="No photo"
+                >
+                  <ImageOff className="size-4 text-muted-foreground" />
+                </div>
+              )}
               <CardTitle className="text-base">{product.name}</CardTitle>
               <Badge variant={product.is_active ? 'default' : 'secondary'}>
                 {product.is_active ? 'Active' : 'Inactive'}
@@ -124,6 +184,59 @@ export function ProductsTab() {
             <DialogTitle>Edit Product</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Photo</Label>
+              <div className="flex items-center gap-4">
+                {formImageUrl ? (
+                  <img
+                    src={formImageUrl}
+                    alt={formName}
+                    className="aspect-[4/3] w-36 shrink-0 rounded-lg border object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-[4/3] w-36 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs text-muted-foreground">
+                    <ImageOff className="size-5" />
+                    No photo
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={PRODUCT_IMAGE_TYPES.join(',')}
+                    className="hidden"
+                    onChange={(e) => handleFile(e.target.files?.[0])}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploading ? (
+                      <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="mr-1.5 size-3.5" />
+                    )}
+                    {formImageUrl ? 'Replace photo' : 'Upload photo'}
+                  </Button>
+                  {formImageUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={uploading}
+                      onClick={() => setFormImageUrl(null)}
+                    >
+                      <Trash2 className="mr-1.5 size-3.5" />
+                      Remove photo
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">JPG, PNG or WebP, up to 5 MB</p>
+                </div>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="prod-name">Name</Label>
               <Input
@@ -165,7 +278,7 @@ export function ProductsTab() {
             <Button variant="outline" onClick={closeEdit}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving || !formName || !formPrice}>
+            <Button onClick={handleSave} disabled={saving || uploading || !formName || !formPrice}>
               {saving ? 'Saving…' : 'Save'}
             </Button>
           </DialogFooter>

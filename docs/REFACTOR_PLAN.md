@@ -83,8 +83,9 @@ Nav: Home · Products · Gallery · FAQ · Contact + a **Book Now** button (was 
 
 ## Open follow-ups
 
-- [!] RLS: restrict anon on `bookings` to `rental_date, status` (column grants) and move the confirmation-page read behind an RPC/edge function keyed by booking id
-- [!] Product `image_url`s in the live DB point to files that don't exist (`/gallery/cold-plunge.jpg`, …), see LATER.md
+- [x] RLS: anon limited to `bookings(rental_date, status)`; confirmation page reads via `get_booking_confirmation(uuid)` (migration 020) — also fixes line items never showing to customers
+- [x] Broken product `image_url`s cleared; admin photo upload/remove via the `product-images` bucket (migration 021)
+- [!] `coupons` is anon-readable in full (`USING (true)`): anyone can list discount codes
 - [!] Copy inconsistencies to settle: cancellation window (FAQ 72h vs email 48h), clearance (booking page 4 ft vs Terms 10 ft)
 - [!] Hero/testimonial claims: the old "4.9 Rating / 500+ Rentals" badges were replaced with factual ones; seeded testimonials should be real before launch
 
@@ -99,6 +100,6 @@ Nav: Home · Products · Gallery · FAQ · Contact + a **Book Now** button (was 
 ## Deploy order (owner)
 
 1. Secret: Dashboard → Edge Functions → Secrets → add `DELIVERY_ORIGIN` (value from `.env`), or `NO_PROXY="*" supabase secrets set DELIVERY_ORIGIN=<lat,lng>`
-2. Migrations 017, 018, 019: `NO_PROXY="*" supabase db push`, or paste each file into Dashboard → SQL Editor in order
+2. Migrations: `NO_PROXY="*" supabase db push` (017–021), or paste each file into Dashboard → SQL Editor in order
 3. `NO_PROXY="*" supabase functions deploy delivery-quote create-payment-intent stripe-webhook`
-4. Push the frontend (Netlify) right after step 3
+4. Push the frontend (Netlify). The confirmation page works before and after migration 020.

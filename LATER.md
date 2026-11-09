@@ -29,8 +29,8 @@ Tasks to complete after deploying the site.
 
 ## Images & Media
 
-- [ ] **Add product pictures** — Replace placeholder images with real photos:
-  - [ ] Primary sauna product (via Supabase/products or seed)
+- [ ] **Add product pictures** — upload real photos in Admin → Settings → Products (edit → Upload photo):
+  - [ ] Primary sauna product
   - [ ] Add-ons (cold plunge, firewood, aromatherapy kit, venik)
 - [ ] **Replace OG image** — Replace `public/og-image.jpg` with a real sauna photo (1200×630px) for social sharing
 - [ ] **Gallery images** — Add real sauna photos to `public/gallery/` (exterior, interior) and seed via Supabase if using DB

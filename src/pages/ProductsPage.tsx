@@ -117,15 +117,22 @@ function ProductCard({ product }: { product: Product }) {
 function AddonCard({ product }: { product: Product }) {
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-md">
-      <img
-        src={product.image_url ?? placeholderImages[0]}
-        alt={product.name}
-        width={400}
-        height={400}
-        loading="lazy"
-        decoding="async"
-        className="aspect-square w-full object-cover"
-      />
+      {product.image_url ? (
+        <img
+          src={product.image_url}
+          alt={product.name}
+          width={400}
+          height={400}
+          loading="lazy"
+          decoding="async"
+          className="aspect-square w-full object-cover"
+        />
+      ) : (
+        // No photo uploaded yet — a stock sauna shot would misrepresent the add-on
+        <div className="flex aspect-square w-full items-center justify-center bg-muted">
+          <Sparkles className="size-10 text-muted-foreground/40" />
+        </div>
+      )}
       <CardContent className="p-4">
         <h3 className="font-semibold">{product.name}</h3>
         <p className="mt-1 text-sm text-muted-foreground line-clamp-2">

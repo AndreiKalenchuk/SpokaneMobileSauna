@@ -23,7 +23,46 @@ import { useBookingStore } from '@/stores/bookingStore'
 import { useDeliverySettings } from '@/hooks/useDeliverySettings'
 import { fillDeliveryTokens } from '@/lib/delivery'
 import type { DeliverySettings } from '@/lib/delivery'
-import type { Booking, BookingItem } from '@/types'
+import type { Booking } from '@/types'
+
+type ConfirmationBooking = Pick<
+  Booking,
+  | 'id'
+  | 'booking_number'
+  | 'rental_date'
+  | 'status'
+  | 'customer_email'
+  | 'fulfillment_method'
+  | 'delivery_address'
+  | 'delivery_distance_miles'
+  | 'fulfillment_fee'
+  | 'subtotal'
+  | 'tax_amount'
+  | 'total_amount'
+> & {
+  items: { id: string; name: string; quantity: number; total_price: number }[]
+}
+
+/**
+ * Anon can't read bookings directly (customer PII); the confirmation page reads
+ * one booking by its unguessable id through get_booking_confirmation (migration 020).
+ */
+async function fetchConfirmation(id: string): Promise<ConfirmationBooking | null> {
+  const { data, error } = await supabase.rpc('get_booking_confirmation', {
+    p_booking_id: id,
+  })
+  if (!error) return data as ConfirmationBooking | null
+
+  // PGRST202 = function missing, i.e. migration 020 not applied yet: legacy read
+  if (error.code !== 'PGRST202') throw error
+  const { data: legacy, error: legacyError } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (legacyError) throw legacyError
+  return { ...(legacy as Booking), items: [] }
+}
 
 function formatCurrency(amount: number): string {
   return `$${amount.toFixed(2)}`
@@ -40,7 +79,7 @@ function formatDisplayDate(dateStr: string): string {
   })
 }
 
-function generateICS(booking: Booking, settings: DeliverySettings): string {
+function generateICS(booking: ConfirmationBooking, settings: DeliverySettings): string {
   const [year, month, day] = booking.rental_date.split('-').map(Number)
   const startDate = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`
   const nextDay = new Date(year, month - 1, day + 1)
@@ -68,7 +107,7 @@ function generateICS(booking: Booking, settings: DeliverySettings): string {
   return lines.join('\r\n')
 }
 
-function downloadICS(booking: Booking, settings: DeliverySettings) {
+function downloadICS(booking: ConfirmationBooking, settings: DeliverySettings) {
   const content = generateICS(booking, settings)
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -130,30 +169,8 @@ export default function BookingConfirmationPage() {
   }, [resetBooking])
 
   const { data: booking, isLoading: bookingLoading } = useQuery({
-    queryKey: ['booking', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data as Booking
-    },
-    enabled: !!id,
-    retry: 1,
-  })
-
-  const { data: bookingItems } = useQuery({
-    queryKey: ['bookingItems', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('booking_items')
-        .select('*, product:products(name)')
-        .eq('booking_id', id)
-      if (error) throw error
-      return data as (BookingItem & { product: { name: string } })[]
-    },
+    queryKey: ['booking-confirmation', id],
+    queryFn: () => fetchConfirmation(id!),
     enabled: !!id,
     retry: 1,
   })
@@ -252,12 +269,12 @@ export default function BookingConfirmationPage() {
                     <Separator />
 
                     {/* Line Items */}
-                    {bookingItems && bookingItems.length > 0 && (
+                    {(booking.items.length > 0 || Number(booking.fulfillment_fee) > 0) && (
                       <div className="space-y-2">
-                        {bookingItems.map((item) => (
+                        {booking.items.map((item) => (
                           <div key={item.id} className="flex justify-between text-sm">
                             <span className="text-muted-foreground">
-                              {item.product?.name ?? 'Item'}
+                              {item.name}
                               {item.quantity > 1 ? ` × ${item.quantity}` : ''}
                             </span>
                             <span>{formatCurrency(item.total_price)}</span>
