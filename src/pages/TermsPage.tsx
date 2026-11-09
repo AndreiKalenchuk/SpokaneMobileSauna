@@ -22,8 +22,12 @@ const sections = [
 Cancellations must be submitted in writing via email. Rescheduling is available subject to availability and must be requested at least 48 hours in advance. One reschedule per booking is permitted at no additional charge.`,
   },
   {
-    title: '4. Delivery, Setup & Site Requirements',
-    content: `We deliver, set up, and pick up the sauna at your specified location. Our staff will start the initial fire and provide a full safety orientation before departure. The Renter must ensure:
+    title: '4. Delivery, Pickup, Setup & Site Requirements',
+    content: `Delivery rentals: we deliver, set up, and pick up the sauna at your specified location. Our staff will start the initial fire and provide a full safety orientation before departure.
+
+Pickup rentals: the Renter collects the sauna trailer from our designated pickup location and returns it at the agreed time. The Renter must provide a tow vehicle rated for the loaded trailer with a compatible hitch, hold a valid driver's license, and carry auto insurance that extends to towed trailers. The Renter is responsible for the sauna from pickup until it is returned, including during transport. The stove must never be lit while the trailer is being towed. A safety orientation is provided at pickup.
+
+For every rental, the setup location must meet these requirements. The Renter must ensure:
 
 • A flat, level surface (gravel, concrete, or packed earth) of at least 12' × 16'
 • Clear vehicle access for our delivery trailer (standard driveway width)
@@ -31,7 +35,7 @@ Cancellations must be submitted in writing via email. Rescheduling is available 
 • Minimum 10-foot clearance from all structures, fences, vehicles, and any combustible materials
 • Maximum ground slope of 15%
 • Access to the setup area at the agreed-upon delivery time
-• The sauna must not be moved, towed, or relocated from its setup position after delivery
+• Once set up, the sauna must not be moved or relocated until it is collected (delivery rentals) or towed back to us (pickup rentals)
 
 If the delivery location is deemed unsafe or inaccessible by our team, we reserve the right to cancel the rental on-site. In such cases, a 50% refund will be issued.`,
   },
@@ -158,8 +162,8 @@ To the maximum extent permitted by law, the Company's total liability shall not 
 • Modifying, disassembling, or tampering with any part of the sauna, stove, chimney, or trailer
 • Using fire accelerants or prohibited substances as described in Section 5
 • Operating the sauna during an active burn ban or fire weather advisory
-• Moving the sauna from its delivered setup position
-• Tampering with trailer locks, hitch, or transport mechanisms
+• Moving the sauna from its setup position, other than towing it to and from our pickup location on a pickup rental
+• Tampering with trailer locks or transport mechanisms, other than hitching and unhitching as instructed on a pickup rental
 • Any use that creates an unreasonable risk of fire, injury, or property damage`,
   },
   {
@@ -202,7 +206,7 @@ export default function TermsPage() {
   return (
     <>
       <Helmet>
-        <title>Terms & Conditions — {SITE_NAME}</title>
+        <title>{`Terms & Conditions — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="Rental terms and conditions for Mobile Sauna Rental. Review our booking, cancellation, fire safety, liability, and usage policies."

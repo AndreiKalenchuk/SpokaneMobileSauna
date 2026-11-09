@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BlockedDatesTab } from '@/components/admin/BlockedDatesTab'
 import { ProductsTab } from '@/components/admin/ProductsTab'
 import { PricingRulesTab } from '@/components/admin/PricingRulesTab'
-import { CommunityEventsTab } from '@/components/admin/CommunityEventsTab'
+import { DeliverySettingsTab } from '@/components/admin/DeliverySettingsTab'
 
 export default function AdminSettingsPage() {
   return (
@@ -12,17 +12,13 @@ export default function AdminSettingsPage() {
       <Tabs defaultValue="blocked-dates">
         <TabsList>
           <TabsTrigger value="blocked-dates">Calendar</TabsTrigger>
-          <TabsTrigger value="community">Community Events</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="pricing-rules">Pricing Rules</TabsTrigger>
+          <TabsTrigger value="delivery">Delivery & Pickup</TabsTrigger>
         </TabsList>
 
         <TabsContent value="blocked-dates">
           <BlockedDatesTab />
-        </TabsContent>
-
-        <TabsContent value="community">
-          <CommunityEventsTab />
         </TabsContent>
 
         <TabsContent value="products">
@@ -31,6 +27,10 @@ export default function AdminSettingsPage() {
 
         <TabsContent value="pricing-rules">
           <PricingRulesTab />
+        </TabsContent>
+
+        <TabsContent value="delivery">
+          <DeliverySettingsTab />
         </TabsContent>
       </Tabs>
     </div>

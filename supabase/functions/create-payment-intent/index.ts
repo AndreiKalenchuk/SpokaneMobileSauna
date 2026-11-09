@@ -2,17 +2,26 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { corsHeaders } from '../_shared/cors.ts'
+import {
+  DeliveryQuoteError,
+  loadDeliverySettings,
+  parseOrigin,
+  quoteDelivery,
+} from '../_shared/delivery.ts'
 
 const TAX_RATE = 0.089
 
+type FulfillmentMethod = 'delivery' | 'pickup'
+
 interface RequestBody {
   rental_date: string
+  fulfillment_method?: FulfillmentMethod
   items: { product_id: string; quantity: number }[]
   customer: {
     name: string
     email: string
     phone: string
-    delivery_address: string
+    delivery_address?: string
     notes?: string
   }
 }
@@ -70,10 +79,27 @@ serve(async (req) => {
   try {
     const body: RequestBody = await req.json()
     const { rental_date, items, customer } = body
+    // Older clients predate the pickup option and always meant delivery
+    const fulfillmentMethod = body.fulfillment_method ?? 'delivery'
+    const deliveryAddress = customer?.delivery_address?.trim() ?? ''
 
     if (!rental_date || !items?.length || !customer?.name || !customer?.email) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    if (fulfillmentMethod !== 'delivery' && fulfillmentMethod !== 'pickup') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid fulfillment method' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    if (fulfillmentMethod === 'delivery' && !deliveryAddress) {
+      return new Response(
+        JSON.stringify({ error: 'Delivery address is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -163,7 +189,52 @@ serve(async (req) => {
       })
     }
 
-    subtotal = Math.round(subtotal * 100) / 100
+    // --- Fulfillment fee from admin settings + real driving distance (never from the client) ---
+
+    const settings = await loadDeliverySettings(
+      Deno.env.get('SUPABASE_URL'),
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+    )
+
+    const methodEnabled =
+      fulfillmentMethod === 'delivery' ? settings.delivery_enabled : settings.pickup_enabled
+    if (!methodEnabled) {
+      return new Response(
+        JSON.stringify({ error: `${fulfillmentMethod === 'delivery' ? 'Delivery' : 'Pickup'} is currently unavailable` }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    let fulfillmentFee = settings.pickup_fee
+    let deliveryMiles: number | null = null
+
+    if (fulfillmentMethod === 'delivery') {
+      try {
+        const quote = await quoteDelivery(
+          deliveryAddress,
+          parseOrigin(Deno.env.get('DELIVERY_ORIGIN')),
+          settings,
+        )
+        if (!quote.withinServiceArea) {
+          return new Response(
+            JSON.stringify({ error: 'Address is outside our delivery area' }),
+            { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          )
+        }
+        fulfillmentFee = quote.fee
+        deliveryMiles = quote.miles
+      } catch (err) {
+        if (err instanceof DeliveryQuoteError) {
+          return new Response(
+            JSON.stringify({ error: err.message }),
+            { status: err.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          )
+        }
+        throw err
+      }
+    }
+
+    subtotal = Math.round((subtotal + fulfillmentFee) * 100) / 100
     const taxAmount = Math.round(subtotal * TAX_RATE * 100) / 100
     const totalAmount = Math.round((subtotal + taxAmount) * 100) / 100
     const totalInCents = Math.round(totalAmount * 100)
@@ -181,6 +252,7 @@ serve(async (req) => {
         booking_number: bookingNumber,
         rental_date,
         customer_email: customer.email,
+        fulfillment_method: fulfillmentMethod,
       },
     })
 
@@ -199,7 +271,11 @@ serve(async (req) => {
         tax_amount: taxAmount,
         total_amount: totalAmount,
         stripe_payment_intent_id: paymentIntent.id,
-        delivery_address: customer.delivery_address || null,
+        fulfillment_method: fulfillmentMethod,
+        delivery_address:
+          fulfillmentMethod === 'delivery' ? deliveryAddress : null,
+        delivery_distance_miles: deliveryMiles,
+        fulfillment_fee: fulfillmentFee,
         notes: customer.notes || null,
       })
       .select('id')

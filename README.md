@@ -2,11 +2,23 @@
 
 React + TypeScript + Vite app with Supabase backend and Stripe payments.
 
-## Admin Guides
+## Docs
 
-- [Community Sauna — Admin Guide](./COMMUNITY_SAUNA_ADMIN_GUIDE.md) — how to
-  add/edit Community Sauna events, smoke-test a booking, and troubleshoot with
-  SQL.
+- [Delivery & pickup refactor plan](./docs/REFACTOR_PLAN.md) — what changed and the deploy order
+- [Community Sauna — implementation guide](./docs/COMMUNITY_SAUNA_IMPLEMENTATION.md) — the
+  removed weekly drop-in service, documented for re-implementation
+
+## Delivery quotes
+
+Delivery is priced by real driving distance from the pickup base. Prices, free
+radius, rounding, range, pickup fee and all delivery/pickup text are edited in
+**Admin → Settings → Delivery & Pickup** (`delivery_settings` table). Addresses
+are geocoded with the US Census Geocoder (Nominatim fallback) and routed with
+OSRM — no API keys. The base location is the `DELIVERY_ORIGIN` secret
+(`"lat,lng"`); it is never shipped to the browser.
+
+- Production: `delivery-quote` edge function (`NO_PROXY="*" supabase secrets set DELIVERY_ORIGIN=...`)
+- `npm run dev`: a Vite middleware runs the same module — set `DELIVERY_ORIGIN` in `.env`
 
 ## Getting Started
 

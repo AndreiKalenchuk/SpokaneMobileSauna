@@ -51,7 +51,7 @@ export default function GalleryPage() {
   return (
     <>
       <Helmet>
-        <title>Gallery — {SITE_NAME}</title>
+        <title>{`Gallery — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="See our mobile sauna in action — from backyard retreats to lakeside escapes. Browse exterior, interior, event, and scenery photos."

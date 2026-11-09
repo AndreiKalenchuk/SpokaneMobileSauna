@@ -60,7 +60,7 @@ export default function FaqPage() {
   return (
     <>
       <Helmet>
-        <title>FAQ — {SITE_NAME}</title>
+        <title>{`FAQ — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="Frequently asked questions about our mobile sauna rental service. Find answers about booking, pricing, delivery, setup, and more."

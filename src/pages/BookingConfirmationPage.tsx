@@ -12,6 +12,7 @@ import {
   MapPin,
   Calendar,
   CreditCard,
+  Truck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -19,6 +20,9 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supabase } from '@/lib/supabase'
 import { useBookingStore } from '@/stores/bookingStore'
+import { useDeliverySettings } from '@/hooks/useDeliverySettings'
+import { fillDeliveryTokens } from '@/lib/delivery'
+import type { DeliverySettings } from '@/lib/delivery'
 import type { Booking, BookingItem } from '@/types'
 
 function formatCurrency(amount: number): string {
@@ -36,7 +40,7 @@ function formatDisplayDate(dateStr: string): string {
   })
 }
 
-function generateICS(booking: Booking): string {
+function generateICS(booking: Booking, settings: DeliverySettings): string {
   const [year, month, day] = booking.rental_date.split('-').map(Number)
   const startDate = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`
   const nextDay = new Date(year, month - 1, day + 1)
@@ -50,8 +54,12 @@ function generateICS(booking: Booking): string {
     `DTSTART;VALUE=DATE:${startDate}`,
     `DTEND;VALUE=DATE:${endDate}`,
     `SUMMARY:Mobile Sauna Rental`,
-    `DESCRIPTION:Booking #${booking.booking_number}\\nDelivered before 2 PM\\, pickup next day after 10 AM.${booking.delivery_address ? `\\nAddress: ${booking.delivery_address}` : ''}`,
-    booking.delivery_address ? `LOCATION:${booking.delivery_address}` : '',
+    booking.fulfillment_method === 'pickup'
+      ? `DESCRIPTION:Booking #${booking.booking_number}\\nPickup off ${settings.pickup_exit} (${settings.pickup_street}). We'll send exact pickup details.`
+      : `DESCRIPTION:Booking #${booking.booking_number}\\nDelivered before 2 PM\\, pickup next day after 10 AM.${booking.delivery_address ? `\\nAddress: ${booking.delivery_address}` : ''}`,
+    booking.fulfillment_method === 'pickup'
+      ? `LOCATION:${settings.pickup_exit} (${settings.pickup_street})\\, ${settings.pickup_area}`
+      : booking.delivery_address ? `LOCATION:${booking.delivery_address}` : '',
     `UID:${booking.id}@mobilesaunarental.com`,
     'END:VEVENT',
     'END:VCALENDAR',
@@ -60,8 +68,8 @@ function generateICS(booking: Booking): string {
   return lines.join('\r\n')
 }
 
-function downloadICS(booking: Booking) {
-  const content = generateICS(booking)
+function downloadICS(booking: Booking, settings: DeliverySettings) {
+  const content = generateICS(booking, settings)
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -115,6 +123,7 @@ function ConfirmationSkeleton() {
 export default function BookingConfirmationPage() {
   const { id } = useParams()
   const resetBooking = useBookingStore((s) => s.reset)
+  const settings = useDeliverySettings()
 
   useEffect(() => {
     resetBooking()
@@ -159,7 +168,7 @@ export default function BookingConfirmationPage() {
   return (
     <>
       <Helmet>
-        <title>Booking Confirmed — {SITE_NAME}</title>
+        <title>{`Booking Confirmed — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="Your mobile sauna rental is confirmed. View your booking details and add to calendar."
@@ -218,14 +227,26 @@ export default function BookingConfirmationPage() {
                       </div>
                     </div>
 
-                    {booking.delivery_address && (
+                    {booking.fulfillment_method === 'pickup' ? (
                       <div className="flex items-start gap-3">
                         <MapPin className="mt-0.5 size-4 text-muted-foreground shrink-0" />
                         <div>
-                          <p className="text-sm text-muted-foreground">Delivery Address</p>
-                          <p className="font-medium">{booking.delivery_address}</p>
+                          <p className="text-sm text-muted-foreground">Pickup</p>
+                          <p className="font-medium">
+                            {settings.pickup_exit} ({settings.pickup_street})
+                          </p>
                         </div>
                       </div>
+                    ) : (
+                      booking.delivery_address && (
+                        <div className="flex items-start gap-3">
+                          <Truck className="mt-0.5 size-4 text-muted-foreground shrink-0" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Delivery Address</p>
+                            <p className="font-medium">{booking.delivery_address}</p>
+                          </div>
+                        </div>
+                      )
                     )}
 
                     <Separator />
@@ -242,6 +263,17 @@ export default function BookingConfirmationPage() {
                             <span>{formatCurrency(item.total_price)}</span>
                           </div>
                         ))}
+                        {Number(booking.fulfillment_fee) > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              {booking.fulfillment_method === 'pickup' ? 'Pickup' : 'Delivery'}
+                              {booking.delivery_distance_miles
+                                ? ` (${Number(booking.delivery_distance_miles).toFixed(1)} mi)`
+                                : ''}
+                            </span>
+                            <span>{formatCurrency(Number(booking.fulfillment_fee))}</span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -304,18 +336,15 @@ export default function BookingConfirmationPage() {
               <CardContent className="p-6">
                 <h3 className="font-semibold text-lg mb-3">What to Expect</h3>
                 <ul className="space-y-3 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1 size-1.5 rounded-full bg-primary shrink-0" />
-                    We'll contact you 24 hours before your rental to confirm delivery details.
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1 size-1.5 rounded-full bg-primary shrink-0" />
-                    Please ensure the delivery area is clear — level surface with 4 ft clearance from structures.
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1 size-1.5 rounded-full bg-primary shrink-0" />
-                    The sauna will be delivered before 2 PM and picked up the next day after 10 AM.
-                  </li>
+                  {(booking?.fulfillment_method === 'pickup'
+                    ? settings.pickup_instructions
+                    : settings.delivery_instructions
+                  ).map((text) => (
+                    <li key={text} className="flex items-start gap-2">
+                      <span className="mt-1 size-1.5 rounded-full bg-primary shrink-0" />
+                      {fillDeliveryTokens(text, settings)}
+                    </li>
+                  ))}
                 </ul>
               </CardContent>
             </Card>
@@ -339,7 +368,7 @@ export default function BookingConfirmationPage() {
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => downloadICS(booking)}
+                onClick={() => downloadICS(booking, settings)}
                 className="flex items-center gap-2"
               >
                 <CalendarPlus className="size-4" />

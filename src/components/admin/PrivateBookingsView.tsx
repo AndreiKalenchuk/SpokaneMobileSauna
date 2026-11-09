@@ -206,7 +206,12 @@ export function PrivateBookingsView() {
                       <TableCell className="text-sm">
                         {getPrimaryProductName(booking)}
                       </TableCell>
-                      <TableCell>{formatDate(booking.rental_date)}</TableCell>
+                      <TableCell>
+                        <p>{formatDate(booking.rental_date)}</p>
+                        <Badge variant="secondary" className="mt-1 text-[10px]">
+                          {booking.fulfillment_method === 'pickup' ? 'Pickup' : 'Delivery'}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <Badge
                           className={statusColors[booking.status]}
@@ -245,17 +250,31 @@ export function PrivateBookingsView() {
                               </div>
                             )}
 
-                            {booking.delivery_address && (
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                                  Delivery Address
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                                {booking.fulfillment_method === 'pickup' ? 'Pickup' : 'Delivery'}
+                              </p>
+                              {booking.fulfillment_method === 'pickup' ? (
+                                <p className="text-sm">
+                                  Customer collects the trailer
+                                  {Number(booking.fulfillment_fee) > 0 &&
+                                    ` · ${formatCurrency(Number(booking.fulfillment_fee))}`}
                                 </p>
+                              ) : (
                                 <p className="text-sm flex items-start gap-1.5">
                                   <MapPin className="size-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                                  {booking.delivery_address}
+                                  <span>
+                                    {booking.delivery_address ?? '—'}
+                                    {booking.delivery_distance_miles != null && (
+                                      <span className="block text-muted-foreground">
+                                        {Number(booking.delivery_distance_miles).toFixed(1)} mi ·{' '}
+                                        {formatCurrency(Number(booking.fulfillment_fee))}
+                                      </span>
+                                    )}
+                                  </span>
                                 </p>
-                              </div>
-                            )}
+                              )}
+                            </div>
 
                             {booking.notes && (
                               <div>
@@ -266,9 +285,6 @@ export function PrivateBookingsView() {
                               </div>
                             )}
 
-                            {addons.length === 0 && !booking.delivery_address && !booking.notes && (
-                              <p className="text-sm text-muted-foreground">No add-ons, address, or notes.</p>
-                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -331,14 +347,28 @@ export function PrivateBookingsView() {
                   </p>
                 </div>
 
-                {selected.delivery_address && (
-                  <div>
-                    <h4 className="mb-2 text-sm font-medium text-muted-foreground">
-                      Delivery Address
-                    </h4>
-                    <p className="text-sm">{selected.delivery_address}</p>
-                  </div>
-                )}
+                <div>
+                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">
+                    {selected.fulfillment_method === 'pickup' ? 'Pickup' : 'Delivery'}
+                  </h4>
+                  {selected.fulfillment_method === 'pickup' ? (
+                    <p className="text-sm">
+                      Customer collects the trailer
+                      {Number(selected.fulfillment_fee) > 0 &&
+                        ` · ${formatCurrency(Number(selected.fulfillment_fee))}`}
+                    </p>
+                  ) : (
+                    <p className="text-sm">
+                      {selected.delivery_address ?? '—'}
+                      {selected.delivery_distance_miles != null && (
+                        <span className="block text-muted-foreground">
+                          {Number(selected.delivery_distance_miles).toFixed(1)} mi ·{' '}
+                          {formatCurrency(Number(selected.fulfillment_fee))}
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
 
                 {selected.notes && (
                   <div>

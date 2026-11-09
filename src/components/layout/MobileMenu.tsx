@@ -61,12 +61,7 @@ export function MobileMenu({ open, onClose, links }: MobileMenuProps) {
             <div className="p-4 mt-auto space-y-2">
               <Button asChild className="w-full">
                 <Link to="/book" onClick={onClose}>
-                  Private Sauna
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/community" onClick={onClose}>
-                  Community Sauna
+                  Book Now
                 </Link>
               </Button>
             </div>

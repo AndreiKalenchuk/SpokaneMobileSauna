@@ -39,7 +39,10 @@ export interface Booking {
   coupon_id: string | null;
   discount_amount: number;
   notes: string | null;
+  fulfillment_method: 'delivery' | 'pickup';
   delivery_address: string | null;
+  delivery_distance_miles: number | null;
+  fulfillment_fee: number;
   created_at: string;
   updated_at: string;
 }
@@ -100,51 +103,4 @@ export interface Coupon {
   expires_at: string | null;
   is_active: boolean;
   created_at: string;
-}
-
-export interface CommunityEvent {
-  id: string;
-  event_date: string;
-  start_time: string;
-  end_time: string;
-  slot_minutes: number;
-  location: string;
-  capacity_per_slot: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CommunityEventSeries {
-  id: string;
-  day_of_week: number;
-  start_time: string;
-  end_time: string;
-  slot_minutes: number;
-  location: string;
-  capacity_per_slot: number;
-  starts_on: string;
-  ends_on: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CommunityBooking {
-  id: string;
-  booking_number: string;
-  event_date: string;
-  slot_time: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string | null;
-  quantity: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  subtotal: number;
-  tax_amount: number;
-  total_amount: number;
-  stripe_payment_intent_id: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
 }

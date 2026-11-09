@@ -4,13 +4,13 @@ import {
   SITE_URL,
   fullUrl,
   DEFAULT_OG_IMAGE,
+  HERO_IMAGE_URL,
   CONTACT,
 } from '@/lib/site-config'
 import { HeroSection } from '@/components/home/HeroSection'
-import { BookingOptionsSection } from '@/components/home/BookingOptionsSection'
+import { HowItWorksSection } from '@/components/home/HowItWorksSection'
+import { FulfillmentSection } from '@/components/home/FulfillmentSection'
 import { BenefitsSection } from '@/components/home/BenefitsSection'
-import { PerfectForSection } from '@/components/home/PerfectForSection'
-import { AddOnsPreviewSection } from '@/components/home/AddOnsPreviewSection'
 import { TestimonialsSection } from '@/components/home/TestimonialsSection'
 import { GalleryPreviewSection } from '@/components/home/GalleryPreviewSection'
 import { FaqPreviewSection } from '@/components/home/FaqPreviewSection'
@@ -20,26 +20,22 @@ export default function HomePage() {
   return (
     <>
       <Helmet>
-        <title>Book Your Mobile Sauna — {SITE_NAME}</title>
+        <title>{`Book Your Mobile Sauna — ${SITE_NAME}`}</title>
         <meta
           name="description"
-          content="Premium wood-fired mobile sauna delivered to your door. Seats 6, includes setup and teardown. Book your 24-hour sauna escape today. From $229/day."
+          content="Premium wood-fired mobile sauna for 24 hours. Delivered and set up at your door, or picked up right off I-90 in Spokane. Seats 6. From $229/day."
         />
         <meta property="og:title" content={`Book Your Mobile Sauna — ${SITE_NAME}`} />
         <meta
           property="og:description"
-          content="Premium wood-fired mobile sauna delivered to your door. Seats 6, includes setup and teardown. Book your 24-hour sauna escape today."
+          content="Premium wood-fired mobile sauna for 24 hours. Delivered and set up at your door, or picked up right off I-90 in Spokane."
         />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={fullUrl('/')} />
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="canonical" href={fullUrl('/')} />
-        <link
-          rel="preload"
-          as="image"
-          href="https://images.unsplash.com/photo-1554244933-d876deb6b2ff?auto=format&fit=crop&w=2000&q=80"
-        />
+        <link rel="preload" as="image" href={HERO_IMAGE_URL} />
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
@@ -57,16 +53,15 @@ export default function HomePage() {
             openingHours: 'Mo-Su 08:00-20:00',
             priceRange: '$$',
             description:
-              'Premium wood-fired mobile sauna delivered to your door in Spokane and surrounding areas. Seats 6, health benefits, muscle recovery.',
+              'Premium wood-fired mobile sauna rentals in Spokane — delivered and set up at your door, or picked up off I-90. Seats 6, health benefits, muscle recovery.',
           })}
         </script>
       </Helmet>
 
       <HeroSection />
-      <BookingOptionsSection />
+      <HowItWorksSection />
+      <FulfillmentSection />
       <BenefitsSection />
-      <PerfectForSection />
-      <AddOnsPreviewSection />
       <TestimonialsSection />
       <GalleryPreviewSection />
       <FaqPreviewSection />

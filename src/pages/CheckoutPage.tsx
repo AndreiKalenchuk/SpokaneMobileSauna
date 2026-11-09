@@ -19,6 +19,8 @@ import {
   User,
   Calendar,
   Pencil,
+  MapPin,
+  Truck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -30,22 +32,20 @@ import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { useProducts } from '@/hooks/useProducts'
 import { usePricingRules } from '@/hooks/usePricingRules'
-import { getPriceForDate } from '@/lib/pricing'
+import { useDeliverySettings } from '@/hooks/useDeliverySettings'
+import { getPriceForDate, calculateOrderTotals } from '@/lib/pricing'
+import type { OrderTotals } from '@/lib/pricing'
+import { fulfillmentFeeFor } from '@/lib/delivery'
 import { stripePromise, createPaymentIntent } from '@/lib/stripe'
 import type { PaymentIntentResponse } from '@/lib/stripe'
 import { useBookingStore } from '@/stores/bookingStore'
 import { rentalTermsSections } from '@/pages/TermsPage'
 import type { Product, PricingRule } from '@/types'
 
-const TAX_RATE = 0.089
-const FREE_DELIVERY_MILES = 20
-const DELIVERY_RATE_PER_MILE = 2.99
-
 const customerSchema = z.object({
   name: z.string().min(2, 'Full name is required'),
   email: z.string().email('Please enter a valid email'),
   phone: z.string().min(7, 'Phone number is required'),
-  deliveryAddress: z.string().min(5, 'Delivery address is required'),
   notes: z.string().optional(),
   termsAccepted: z.literal(true, {
     message: 'You must accept the Rental Terms & Conditions to continue',
@@ -131,55 +131,26 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 
 // --- Order Summary ---
 
-interface OrderCalculations {
-  mainPrice: number
-  addonLines: { name: string; qty: number; unitPrice: number; lineTotal: number }[]
-  deliverySurcharge: number
-  subtotal: number
-  tax: number
-  total: number
-}
-
 function useOrderCalculations(
   primaryProduct: Product | undefined,
   addons: Product[],
   pricingRules: PricingRule[],
-): OrderCalculations {
-  const { selectedDate, selectedAddons, deliveryMiles } = useBookingStore()
+): OrderTotals {
+  const { selectedDate, selectedAddons, fulfillmentMethod, deliveryQuote } = useBookingStore()
+  const settings = useDeliverySettings()
 
-  return useMemo(() => {
-    if (!selectedDate || !primaryProduct) {
-      return { mainPrice: 0, addonLines: [], deliverySurcharge: 0, subtotal: 0, tax: 0, total: 0 }
-    }
-
-    const mainPrice = getPriceForDate(primaryProduct, selectedDate, pricingRules)
-
-    const addonLines: OrderCalculations['addonLines'] = []
-    for (const sa of selectedAddons) {
-      const product = addons.find((a) => a.id === sa.productId)
-      if (product) {
-        const unitPrice = getPriceForDate(product, selectedDate, pricingRules)
-        addonLines.push({
-          name: product.name,
-          qty: sa.quantity,
-          unitPrice,
-          lineTotal: unitPrice * sa.quantity,
-        })
-      }
-    }
-
-    const deliverySurcharge =
-      deliveryMiles > FREE_DELIVERY_MILES
-        ? (deliveryMiles - FREE_DELIVERY_MILES) * DELIVERY_RATE_PER_MILE
-        : 0
-
-    const addonTotal = addonLines.reduce((sum, l) => sum + l.lineTotal, 0)
-    const subtotal = Math.round((mainPrice + addonTotal + deliverySurcharge) * 100) / 100
-    const tax = Math.round(subtotal * TAX_RATE * 100) / 100
-    const total = Math.round((subtotal + tax) * 100) / 100
-
-    return { mainPrice, addonLines, deliverySurcharge, subtotal, tax, total }
-  }, [selectedDate, primaryProduct, pricingRules, selectedAddons, addons, deliveryMiles])
+  return useMemo(
+    () =>
+      calculateOrderTotals({
+        primaryProduct,
+        addons,
+        selectedAddons,
+        date: selectedDate,
+        pricingRules,
+        fulfillmentFee: fulfillmentFeeFor(fulfillmentMethod, deliveryQuote, settings),
+      }),
+    [selectedDate, primaryProduct, pricingRules, selectedAddons, addons, fulfillmentMethod, deliveryQuote, settings],
+  )
 }
 
 function OrderSummary({
@@ -188,10 +159,11 @@ function OrderSummary({
   collapsible,
 }: {
   primaryProduct: Product
-  calculations: OrderCalculations
+  calculations: OrderTotals
   collapsible?: boolean
 }) {
-  const { selectedDate } = useBookingStore()
+  const { selectedDate, fulfillmentMethod, deliveryAddress, deliveryQuote } = useBookingStore()
+  const settings = useDeliverySettings()
   const [isOpen, setIsOpen] = useState(!collapsible)
 
   const content = (
@@ -201,6 +173,26 @@ function OrderSummary({
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Date</p>
         <p className="font-semibold mt-1">
           {selectedDate ? formatDisplayDate(selectedDate) : '—'}
+        </p>
+      </div>
+
+      {/* Fulfillment */}
+      <div>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+          {fulfillmentMethod === 'pickup' ? 'Pickup' : 'Delivery'}
+        </p>
+        <p className="mt-1 flex items-start gap-1.5 text-sm">
+          {fulfillmentMethod === 'pickup' ? (
+            <>
+              <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+              {settings.pickup_exit} ({settings.pickup_street})
+            </>
+          ) : (
+            <>
+              <Truck className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+              {deliveryQuote?.matchedAddress ?? deliveryAddress}
+            </>
+          )}
         </p>
       </div>
 
@@ -223,10 +215,21 @@ function OrderSummary({
           </div>
         ))}
 
-        {calculations.deliverySurcharge > 0 && (
+        {fulfillmentMethod === 'pickup' && (
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Delivery surcharge</span>
-            <span>{formatCurrency(calculations.deliverySurcharge)}</span>
+            <span className="text-muted-foreground">Pickup</span>
+            <span>
+              {calculations.fulfillmentFee > 0 ? formatCurrency(calculations.fulfillmentFee) : 'Free'}
+            </span>
+          </div>
+        )}
+
+        {fulfillmentMethod === 'delivery' && calculations.fulfillmentFee > 0 && deliveryQuote && (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">
+              Delivery ({deliveryQuote.miles.toFixed(1)} mi)
+            </span>
+            <span>{formatCurrency(calculations.fulfillmentFee)}</span>
           </div>
         )}
       </div>
@@ -351,8 +354,10 @@ function InlineTerms() {
 
 function CustomerInfoForm({
   onSubmit,
+  isPickup,
 }: {
   onSubmit: (data: CustomerFormValues) => void
+  isPickup: boolean
 }) {
   const {
     register,
@@ -411,29 +416,17 @@ function CustomerInfoForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="deliveryAddress">Delivery Address</Label>
-        <Textarea
-          id="deliveryAddress"
-          placeholder="123 Main St, Spokane, WA 99201"
-          rows={3}
-          {...register('deliveryAddress')}
-          aria-invalid={!!errors.deliveryAddress}
-        />
-        {errors.deliveryAddress && (
-          <p className="text-sm text-destructive">
-            {errors.deliveryAddress.message}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="notes">
           Special Requests / Notes{' '}
           <span className="text-muted-foreground font-normal">(optional)</span>
         </Label>
         <Textarea
           id="notes"
-          placeholder="Any special instructions for delivery or setup..."
+          placeholder={
+            isPickup
+              ? 'Anything we should know before pickup?'
+              : 'Gate code, where to place the sauna, unit number...'
+          }
           rows={2}
           {...register('notes')}
         />
@@ -586,21 +579,32 @@ function CheckoutContent({
   pricingRules: PricingRule[]
 }) {
   const navigate = useNavigate()
-  const { selectedDate, selectedAddons, deliveryMiles } = useBookingStore()
+  const { selectedDate, selectedAddons, fulfillmentMethod, deliveryAddress, deliveryQuote } =
+    useBookingStore()
   const [step, setStep] = useState<'info' | 'payment'>('info')
   const [customerData, setCustomerData] = useState<CustomerFormValues | null>(null)
   const [paymentIntent, setPaymentIntent] = useState<PaymentIntentResponse | null>(null)
   const [isCreatingIntent, setIsCreatingIntent] = useState(false)
 
   const calculations = useOrderCalculations(primaryProduct, addons, pricingRules)
+  const settings = useDeliverySettings()
+
+  // Delivery needs an in-area quote from /book; pickup needs nothing else
+  const isReady =
+    !!selectedDate &&
+    ((fulfillmentMethod === 'pickup' && settings.pickup_enabled) ||
+      (fulfillmentMethod === 'delivery' &&
+        settings.delivery_enabled &&
+        !!deliveryQuote?.withinServiceArea))
 
   useEffect(() => {
-    if (!selectedDate) {
+    if (!isReady) {
       navigate('/book', { replace: true })
     }
-  }, [selectedDate, navigate])
+  }, [isReady, navigate])
 
-  if (!selectedDate) return null
+  if (!isReady || !selectedDate || !fulfillmentMethod) return null
+  const isPickup = fulfillmentMethod === 'pickup'
 
   const handleCustomerSubmit = async (data: CustomerFormValues) => {
     setCustomerData(data)
@@ -628,24 +632,28 @@ function CheckoutContent({
 
       const result = await createPaymentIntent({
         rental_date: formatDateToISO(selectedDate),
+        fulfillment_method: fulfillmentMethod,
         items,
         customer: {
           name: data.name,
           email: data.email,
           phone: data.phone,
-          delivery_address: data.deliveryAddress,
+          delivery_address: isPickup ? undefined : deliveryAddress,
           notes: data.notes,
         },
         subtotal: calculations.subtotal,
         tax_amount: calculations.tax,
         total_amount: calculations.total,
-        delivery_miles: deliveryMiles,
       })
 
       setPaymentIntent(result)
       setStep('payment')
-    } catch {
-      toast.error('Failed to initialize payment. Please try again.')
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message !== 'Edge Function returned a non-2xx status code'
+          ? err.message
+          : 'Failed to initialize payment. Please try again.',
+      )
     } finally {
       setIsCreatingIntent(false)
     }
@@ -656,7 +664,7 @@ function CheckoutContent({
   return (
     <>
       <Helmet>
-        <title>Checkout — {SITE_NAME}</title>
+        <title>{`Checkout — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="Complete your mobile sauna rental. Enter delivery details and payment to confirm your booking."
@@ -721,7 +729,7 @@ function CheckoutContent({
                             </p>
                           </div>
                         ) : (
-                          <CustomerInfoForm onSubmit={handleCustomerSubmit} />
+                          <CustomerInfoForm onSubmit={handleCustomerSubmit} isPickup={isPickup} />
                         )}
                       </CardContent>
                     </Card>
@@ -759,7 +767,11 @@ function CheckoutContent({
                             <p className="font-medium">{customerData.name}</p>
                             <p className="text-muted-foreground">{customerData.email}</p>
                             <p className="text-muted-foreground">{customerData.phone}</p>
-                            <p className="text-muted-foreground">{customerData.deliveryAddress}</p>
+                            <p className="text-muted-foreground">
+                              {isPickup
+                                ? `Pickup · ${settings.pickup_exit} (${settings.pickup_street})`
+                                : (deliveryQuote?.matchedAddress ?? deliveryAddress)}
+                            </p>
                           </div>
                         )}
 

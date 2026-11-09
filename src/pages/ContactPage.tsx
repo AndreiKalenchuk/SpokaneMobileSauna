@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
+import { serviceAreaText } from '@/lib/delivery'
+import { useDeliverySettings } from '@/hooks/useDeliverySettings'
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -37,7 +39,12 @@ const subjects = [
   'Other',
 ]
 
-const contactInfo = [
+const contactInfo: {
+  icon: typeof Phone
+  label: string
+  value: string
+  href: string | null
+}[] = [
   {
     icon: Phone,
     label: 'Phone',
@@ -56,12 +63,6 @@ const contactInfo = [
     value: 'Mon–Sun: 8AM–8PM',
     href: null,
   },
-  {
-    icon: MapPin,
-    label: 'Service Area',
-    value: 'Metro area & surrounding communities within 50 miles',
-    href: null,
-  },
 ]
 
 const socials = [
@@ -70,6 +71,16 @@ const socials = [
 ]
 
 export default function ContactPage() {
+  const deliverySettings = useDeliverySettings()
+  const info = [
+    ...contactInfo,
+    {
+      icon: MapPin,
+      label: 'Service Area',
+      value: serviceAreaText(deliverySettings),
+      href: null,
+    },
+  ]
   const {
     register,
     handleSubmit,
@@ -95,7 +106,7 @@ export default function ContactPage() {
   return (
     <>
       <Helmet>
-        <title>Contact — {SITE_NAME}</title>
+        <title>{`Contact — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="Get in touch with us for bookings, questions, or partnership inquiries. Call, email, or fill out our contact form."
@@ -253,7 +264,7 @@ export default function ContactPage() {
               className="space-y-8 lg:col-span-2"
             >
               <div className="space-y-6">
-                {contactInfo.map(({ icon: Icon, label, value, href }) => (
+                {info.map(({ icon: Icon, label, value, href }) => (
                   <div key={label} className="flex items-start gap-4">
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                       <Icon className="size-5 text-primary" />

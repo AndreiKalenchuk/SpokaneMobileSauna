@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { DeliveryQuote, FulfillmentMethod } from '@/lib/delivery'
 
 export interface SelectedAddon {
   productId: string
@@ -8,19 +9,25 @@ export interface SelectedAddon {
 interface BookingState {
   selectedDate: Date | null
   selectedAddons: SelectedAddon[]
-  deliveryMiles: number
+  fulfillmentMethod: FulfillmentMethod | null
+  deliveryAddress: string
+  deliveryQuote: DeliveryQuote | null
 
   setSelectedDate: (date: Date | null) => void
   toggleAddon: (productId: string) => void
   setAddonQuantity: (productId: string, quantity: number) => void
-  setDeliveryMiles: (miles: number) => void
+  setFulfillmentMethod: (method: FulfillmentMethod) => void
+  setDeliveryAddress: (address: string) => void
+  setDeliveryQuote: (quote: DeliveryQuote | null) => void
   reset: () => void
 }
 
 export const useBookingStore = create<BookingState>((set) => ({
   selectedDate: null,
   selectedAddons: [],
-  deliveryMiles: 0,
+  fulfillmentMethod: null,
+  deliveryAddress: '',
+  deliveryQuote: null,
 
   setSelectedDate: (date) => set({ selectedDate: date }),
 
@@ -51,12 +58,20 @@ export const useBookingStore = create<BookingState>((set) => ({
       ),
     })),
 
-  setDeliveryMiles: (miles) => set({ deliveryMiles: miles }),
+  setFulfillmentMethod: (method) => set({ fulfillmentMethod: method }),
+
+  // Editing the address invalidates the quote it was computed for
+  setDeliveryAddress: (address) =>
+    set({ deliveryAddress: address, deliveryQuote: null }),
+
+  setDeliveryQuote: (quote) => set({ deliveryQuote: quote }),
 
   reset: () =>
     set({
       selectedDate: null,
       selectedAddons: [],
-      deliveryMiles: 0,
+      fulfillmentMethod: null,
+      deliveryAddress: '',
+      deliveryQuote: null,
     }),
 }))

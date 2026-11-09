@@ -2,6 +2,22 @@
   command = "npm run build"
   publish = "dist"
 
+# Retired pages — permanent redirects so indexed URLs don't 404
+[[redirects]]
+  from = "/about"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/community/*"
+  to = "/book"
+  status = 301
+
+[[redirects]]
+  from = "/community"
+  to = "/book"
+  status = 301
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

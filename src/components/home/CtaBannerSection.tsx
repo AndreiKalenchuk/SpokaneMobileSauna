@@ -16,8 +16,8 @@ export function CtaBannerSection() {
           Ready for Your Sauna Experience?
         </h2>
         <p className="mt-4 text-lg text-primary-foreground/80">
-          Book today and we'll handle everything — delivery, setup, firewood,
-          and pickup.
+          Pick your date, choose delivery or pickup, and we'll take care of the
+          rest — firewood included.
         </p>
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Button

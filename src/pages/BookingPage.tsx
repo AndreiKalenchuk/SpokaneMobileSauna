@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useId } from 'react'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
@@ -19,35 +19,59 @@ import {
   Plus,
   MapPin,
   ArrowRight,
+  Loader2,
+  Navigation,
+  Route,
+  Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { HowItWorksSection } from '@/components/home/HowItWorksSection'
 import { useProducts } from '@/hooks/useProducts'
 import { useAvailability } from '@/hooks/useAvailability'
 import { usePricingRules } from '@/hooks/usePricingRules'
-import { getPriceForDate } from '@/lib/pricing'
+import { useDeliverySettings } from '@/hooks/useDeliverySettings'
+import { getPriceForDate, calculateOrderTotals } from '@/lib/pricing'
+import {
+  fetchDeliveryQuote,
+  fillDeliveryTokens,
+  formatMiles,
+  formatMoney,
+  fulfillmentFeeFor,
+  pickupPriceText,
+} from '@/lib/delivery'
+import type { DeliveryQuote, DeliverySettings, FulfillmentMethod } from '@/lib/delivery'
 import { cn } from '@/lib/utils'
 import { useBookingStore } from '@/stores/bookingStore'
 import type { Product, PricingRule } from '@/types'
 
-const FREE_DELIVERY_MILES = 20
-const DELIVERY_RATE_PER_MILE = 2.99
+function rentalInclusions(s: DeliverySettings) {
+  const delivery = `Delivery from ${formatMoney(s.delivery_base_fee)}`
+  const pickup = `${pickupPriceText(s)} pickup right off ${s.pickup_exit}`
 
-const rentalInclusions = [
-  { icon: Clock, text: 'Daily rental (delivered before 2 PM, pickup next day after 10 AM)' },
-  { icon: Truck, text: 'Free delivery within 20 miles' },
-  { icon: Wrench, text: 'Professional setup & teardown' },
-  { icon: Shield, text: 'Safety orientation walkthrough' },
-  { icon: Thermometer, text: 'Cedar bucket, ladle & thermometer' },
-  { icon: Users, text: 'Seating for up to 6' },
-  { icon: Flame, text: 'Firewood for ~1 hr heat build + 40 min session' },
-]
+  return [
+    { icon: Clock, text: 'Daily rental (ready by 2 PM, back the next day after 10 AM)' },
+    {
+      icon: Truck,
+      text:
+        s.delivery_enabled && s.pickup_enabled
+          ? `${delivery}, or ${pickup}`
+          : s.delivery_enabled
+            ? delivery
+            : pickup.charAt(0).toUpperCase() + pickup.slice(1),
+    },
+    ...(s.delivery_enabled
+      ? [{ icon: Wrench, text: 'Professional setup & teardown with delivery' }]
+      : []),
+    { icon: Shield, text: 'Safety orientation walkthrough' },
+    { icon: Thermometer, text: 'Cedar bucket, ladle & thermometer' },
+    { icon: Users, text: 'Seating for up to 6' },
+    { icon: Flame, text: 'Firewood for ~1 hr heat build + 40 min session' },
+  ]
+}
 
 function formatDateToMonth(date: Date): string {
   const y = date.getFullYear()
@@ -124,6 +148,7 @@ function BookingSkeleton() {
 
 function RentalInfoPanel() {
   const [isOpen, setIsOpen] = useState(true)
+  const settings = useDeliverySettings()
 
   return (
     <Card className="overflow-hidden">
@@ -155,7 +180,7 @@ function RentalInfoPanel() {
           >
             <CardContent className="pt-0 pb-5">
               <ul className="space-y-3">
-                {rentalInclusions.map(({ icon: Icon, text }) => (
+                {rentalInclusions(settings).map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-start gap-3">
                     <Icon className="mt-0.5 size-4 shrink-0 text-secondary" />
                     <span className="text-sm leading-relaxed">{text}</span>
@@ -318,6 +343,7 @@ function AddOnToggleCard({
       <button
         type="button"
         onClick={onToggle}
+        aria-pressed={isSelected}
         className={cn(
           'flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all',
           isSelected
@@ -326,7 +352,16 @@ function AddOnToggleCard({
         )}
       >
         <div className="pt-0.5">
-          <Checkbox checked={isSelected} tabIndex={-1} />
+          {/* Visual-only checkbox: a Radix Checkbox is a <button> and can't nest in this one */}
+          <span
+            aria-hidden
+            className={cn(
+              'flex size-4 items-center justify-center rounded-[4px] border shadow-xs transition-colors',
+              isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+            )}
+          >
+            {isSelected && <Check className="size-3.5" />}
+          </span>
         </div>
 
         {product.image_url && (
@@ -400,50 +435,222 @@ function AddOnToggleCard({
   )
 }
 
-// --- Delivery Input ---
+// --- Delivery or Pickup ---
 
-function DeliveryInput({
-  miles,
-  onChange,
-}: {
-  miles: number
-  onChange: (miles: number) => void
-}) {
-  const surcharge =
-    miles > FREE_DELIVERY_MILES
-      ? (miles - FREE_DELIVERY_MILES) * DELIVERY_RATE_PER_MILE
-      : 0
+function fulfillmentOptions(s: DeliverySettings): {
+  method: FulfillmentMethod
+  icon: typeof Truck
+  title: string
+  detail: string
+}[] {
+  return [
+    s.delivery_enabled && {
+      method: 'delivery' as const,
+      icon: Truck,
+      title: 'Delivery',
+      detail: `From ${formatMoney(s.delivery_base_fee)} · setup included`,
+    },
+    s.pickup_enabled && {
+      method: 'pickup' as const,
+      icon: MapPin,
+      title: 'Pickup',
+      detail: `${s.pickup_fee > 0 ? formatMoney(s.pickup_fee) : 'Free'} · ${s.pickup_exit}`,
+    },
+  ].filter((o) => !!o)
+}
+
+function PickupInfo() {
+  const settings = useDeliverySettings()
 
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium flex items-center gap-2">
-        <MapPin className="size-4 text-muted-foreground" />
-        Delivery Distance
-      </label>
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          min={0}
-          max={100}
-          value={miles || ''}
-          onChange={(e) => onChange(Number(e.target.value) || 0)}
-          placeholder="Miles from Spokane"
-          className="w-full"
-        />
-        <span className="text-sm text-muted-foreground shrink-0">miles</span>
-      </div>
-      {miles > 0 && miles <= FREE_DELIVERY_MILES && (
-        <p className="text-xs text-success font-medium">Free delivery!</p>
-      )}
-      {surcharge > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {miles - FREE_DELIVERY_MILES} extra miles × $
-          {DELIVERY_RATE_PER_MILE.toFixed(2)}/mi ={' '}
-          <span className="font-medium text-foreground">
-            {formatCurrency(surcharge)}
-          </span>
+    <div className="flex items-start gap-3 rounded-lg bg-muted/60 px-3 py-2.5">
+      <Navigation className="mt-0.5 size-4 shrink-0 text-secondary" />
+      <div className="text-xs leading-relaxed">
+        <p className="text-sm font-medium">
+          {settings.pickup_exit} · {settings.pickup_street}
         </p>
-      )}
+        <p className="mt-0.5 text-muted-foreground">
+          {fillDeliveryTokens(settings.pickup_note, settings)}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function DeliveryQuoteResult({ quote }: { quote: DeliveryQuote }) {
+  const { pickup_enabled } = useDeliverySettings()
+
+  if (!quote.withinServiceArea) {
+    return (
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-xs leading-relaxed">
+        <p className="text-sm font-medium text-destructive">
+          {quote.miles.toFixed(1)} miles — outside our delivery area
+        </p>
+        <p className="mt-0.5 text-muted-foreground">
+          We deliver up to {formatMiles(quote.maxMiles)} driving miles.{' '}
+          {pickup_enabled ? 'Choose pickup, or ' : ''}
+          <Link to="/contact" className="text-primary underline underline-offset-2">
+            {pickup_enabled ? 'contact us' : 'Contact us'}
+          </Link>{' '}
+          about a custom delivery.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border border-success/30 bg-success/5 px-3 py-2.5 text-xs leading-relaxed">
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-medium">
+          <Route className="size-4 text-success" />
+          {quote.miles.toFixed(1)} driving miles
+        </p>
+        <span className="text-sm font-semibold">{formatCurrency(quote.fee)}</span>
+      </div>
+      <p className="mt-1 text-muted-foreground">
+        {quote.extraMiles > 0
+          ? `${formatMoney(quote.baseFee)} + ${formatMiles(quote.extraMiles)} extra mi × ${formatMoney(quote.ratePerExtraMile)}`
+          : `Within ${formatMiles(quote.includedMiles)} miles — flat ${formatMoney(quote.baseFee)}`}
+      </p>
+      <p className="mt-1 truncate text-muted-foreground" title={quote.matchedAddress}>
+        Matched: {quote.matchedAddress}
+      </p>
+      <p className="mt-1.5 text-[10px] text-muted-foreground/70">
+        Road distance by OSRM · © OpenStreetMap contributors
+      </p>
+    </div>
+  )
+}
+
+function DeliveryQuoteForm() {
+  const settings = useDeliverySettings()
+  const { deliveryAddress, deliveryQuote, setDeliveryAddress, setDeliveryQuote } =
+    useBookingStore()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const inputId = useId()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (deliveryAddress.trim().length < 5) {
+      setError('Please enter your full street address.')
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    try {
+      setDeliveryQuote(await fetchDeliveryQuote(deliveryAddress))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not calculate delivery.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        {formatMoney(settings.delivery_base_fee)} covers the first{' '}
+        {formatMiles(settings.delivery_included_miles)} driving miles, then{' '}
+        {formatMoney(settings.delivery_rate_per_extra_mile)} per extra mile.{' '}
+        {fillDeliveryTokens(settings.delivery_note, settings)}
+      </p>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <label htmlFor={inputId} className="flex items-center gap-2 text-sm font-medium">
+          <MapPin className="size-4 text-muted-foreground" />
+          Delivery Address
+        </label>
+        <div className="flex gap-2">
+          <Input
+            id={inputId}
+            value={deliveryAddress}
+            onChange={(e) => {
+              setDeliveryAddress(e.target.value)
+              setError(null)
+            }}
+            placeholder="123 Main St, Spokane, WA 99201"
+            autoComplete="street-address"
+            aria-invalid={!!error}
+          />
+          <Button type="submit" variant="outline" disabled={isLoading} className="shrink-0">
+            {isLoading ? <Loader2 className="size-4 animate-spin" /> : 'Get Quote'}
+          </Button>
+        </div>
+      </form>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {deliveryQuote && <DeliveryQuoteResult quote={deliveryQuote} />}
+    </div>
+  )
+}
+
+function FulfillmentPicker() {
+  const settings = useDeliverySettings()
+  const { fulfillmentMethod, setFulfillmentMethod } = useBookingStore()
+  const options = fulfillmentOptions(settings)
+  const { delivery_enabled, pickup_enabled } = settings
+
+  // Admin can turn a method off: preselect the only option, drop a disabled choice
+  useEffect(() => {
+    const enabled: FulfillmentMethod[] = []
+    if (delivery_enabled) enabled.push('delivery')
+    if (pickup_enabled) enabled.push('pickup')
+
+    const needsChange = fulfillmentMethod
+      ? !enabled.includes(fulfillmentMethod)
+      : enabled.length === 1
+    if (needsChange && enabled[0]) setFulfillmentMethod(enabled[0])
+  }, [delivery_enabled, pickup_enabled, fulfillmentMethod, setFulfillmentMethod])
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+        {options.length > 1 ? 'Delivery or Pickup' : options[0]?.title}
+      </p>
+      <div
+        className={cn('grid gap-2', options.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}
+        role="radiogroup"
+        aria-label="Delivery or pickup"
+      >
+        {options.map(({ method, icon: Icon, title, detail }) => {
+          const isSelected = fulfillmentMethod === method
+          return (
+            <button
+              key={method}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              onClick={() => setFulfillmentMethod(method)}
+              className={cn(
+                'flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all',
+                isSelected
+                  ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+                  : 'border-border hover:border-primary/30 hover:bg-muted/30',
+              )}
+            >
+              <Icon
+                className={cn('size-5', isSelected ? 'text-primary' : 'text-muted-foreground')}
+              />
+              <span className="text-sm font-medium">{title}</span>
+              <span className="text-xs text-muted-foreground">{detail}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {fulfillmentMethod && (
+          <motion.div
+            key={fulfillmentMethod}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+          >
+            {fulfillmentMethod === 'pickup' ? <PickupInfo /> : <DeliveryQuoteForm />}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -462,11 +669,12 @@ function PricingBreakdown({
   const {
     selectedDate,
     selectedAddons,
-    deliveryMiles,
+    fulfillmentMethod,
+    deliveryQuote,
     toggleAddon,
     setAddonQuantity,
-    setDeliveryMiles,
   } = useBookingStore()
+  const settings = useDeliverySettings()
 
   const hasQuantitySelector = useCallback(
     (product: Product) =>
@@ -474,42 +682,33 @@ function PricingBreakdown({
     [],
   )
 
-  const calculations = useMemo(() => {
-    if (!selectedDate || !primaryProduct) {
-      return {
-        mainPrice: 0,
-        addonLines: [] as { name: string; qty: number; unitPrice: number; lineTotal: number }[],
-        deliverySurcharge: 0,
-        subtotal: 0,
-      }
-    }
+  const calculations = useMemo(
+    () =>
+      calculateOrderTotals({
+        primaryProduct,
+        addons,
+        selectedAddons,
+        date: selectedDate,
+        pricingRules,
+        fulfillmentFee: fulfillmentFeeFor(fulfillmentMethod, deliveryQuote, settings),
+      }),
+    [primaryProduct, addons, selectedAddons, selectedDate, pricingRules, fulfillmentMethod, deliveryQuote, settings],
+  )
 
-    const mainPrice = getPriceForDate(primaryProduct, selectedDate, pricingRules)
+  const canCheckout =
+    !!selectedDate &&
+    ((fulfillmentMethod === 'pickup' && settings.pickup_enabled) ||
+      (fulfillmentMethod === 'delivery' &&
+        settings.delivery_enabled &&
+        !!deliveryQuote?.withinServiceArea))
 
-    const addonLines: { name: string; qty: number; unitPrice: number; lineTotal: number }[] = []
-    for (const sa of selectedAddons) {
-      const product = addons.find((a) => a.id === sa.productId)
-      if (product) {
-        const unitPrice = getPriceForDate(product, selectedDate, pricingRules)
-        addonLines.push({
-          name: product.name,
-          qty: sa.quantity,
-          unitPrice,
-          lineTotal: unitPrice * sa.quantity,
-        })
-      }
-    }
-
-    const deliverySurcharge =
-      deliveryMiles > FREE_DELIVERY_MILES
-        ? (deliveryMiles - FREE_DELIVERY_MILES) * DELIVERY_RATE_PER_MILE
-        : 0
-
-    const addonTotal = addonLines.reduce((sum, l) => sum + l.lineTotal, 0)
-    const subtotal = Math.round((mainPrice + addonTotal + deliverySurcharge) * 100) / 100
-
-    return { mainPrice, addonLines, deliverySurcharge, subtotal }
-  }, [selectedDate, primaryProduct, pricingRules, selectedAddons, addons, deliveryMiles])
+  const checkoutHint = !selectedDate
+    ? 'Select a Date to Continue'
+    : !fulfillmentMethod
+      ? 'Choose Delivery or Pickup'
+      : deliveryQuote && !deliveryQuote.withinServiceArea
+        ? 'Choose Pickup or Another Address'
+        : 'Get Your Delivery Quote'
 
   const dateType = selectedDate && primaryProduct
     ? getDateType(selectedDate, pricingRules, primaryProduct.id)
@@ -549,6 +748,11 @@ function PricingBreakdown({
 
       {selectedDate && primaryProduct && (
         <>
+          <Separator />
+
+          {/* Delivery or Pickup */}
+          <FulfillmentPicker />
+
           <Separator />
 
           {/* Main Product */}
@@ -591,11 +795,6 @@ function PricingBreakdown({
 
           <Separator />
 
-          {/* Delivery */}
-          <DeliveryInput miles={deliveryMiles} onChange={setDeliveryMiles} />
-
-          <Separator />
-
           {/* Itemized Summary */}
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
@@ -618,11 +817,23 @@ function PricingBreakdown({
               </div>
             ))}
 
-            {/* Delivery surcharge */}
-            {calculations.deliverySurcharge > 0 && (
+            {/* Fulfillment */}
+            {fulfillmentMethod === 'pickup' && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Delivery surcharge</span>
-                <span>{formatCurrency(calculations.deliverySurcharge)}</span>
+                <span className="text-muted-foreground">Pickup ({settings.pickup_exit})</span>
+                <span>
+                  {calculations.fulfillmentFee > 0
+                    ? formatCurrency(calculations.fulfillmentFee)
+                    : 'Free'}
+                </span>
+              </div>
+            )}
+            {fulfillmentMethod === 'delivery' && calculations.fulfillmentFee > 0 && deliveryQuote && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Delivery ({deliveryQuote.miles.toFixed(1)} mi)
+                </span>
+                <span>{formatCurrency(calculations.fulfillmentFee)}</span>
               </div>
             )}
 
@@ -643,19 +854,19 @@ function PricingBreakdown({
 
       {/* Checkout Button */}
       <Button
-        asChild={!!selectedDate}
+        asChild={canCheckout}
         size="lg"
         className="w-full h-12 text-base mt-2"
-        disabled={!selectedDate}
+        disabled={!canCheckout}
       >
-        {selectedDate ? (
+        {canCheckout ? (
           <Link to="/booking/checkout" className="flex items-center justify-center gap-2">
             Continue to Checkout
             <ArrowRight className="size-4" />
           </Link>
         ) : (
           <span className="flex items-center justify-center gap-2">
-            Select a Date to Continue
+            {checkoutHint}
           </span>
         )}
       </Button>
@@ -674,25 +885,22 @@ function MobilePricingSheet({
   addons: Product[]
   pricingRules: PricingRule[]
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const { selectedDate, selectedAddons, deliveryMiles } = useBookingStore()
+  const [isOpen, setIsOpen] = useState(true)
+  const { selectedDate, selectedAddons, fulfillmentMethod, deliveryQuote } = useBookingStore()
+  const settings = useDeliverySettings()
 
-  const subtotal = useMemo(() => {
-    if (!selectedDate || !primaryProduct) return 0
-    const mainPrice = getPriceForDate(primaryProduct, selectedDate, pricingRules)
-    let addonTotal = 0
-    for (const sa of selectedAddons) {
-      const product = addons.find((a) => a.id === sa.productId)
-      if (product) {
-        addonTotal += getPriceForDate(product, selectedDate, pricingRules) * sa.quantity
-      }
-    }
-    const deliverySurcharge =
-      deliveryMiles > FREE_DELIVERY_MILES
-        ? (deliveryMiles - FREE_DELIVERY_MILES) * DELIVERY_RATE_PER_MILE
-        : 0
-    return Math.round((mainPrice + addonTotal + deliverySurcharge) * 100) / 100
-  }, [selectedDate, primaryProduct, pricingRules, selectedAddons, addons, deliveryMiles])
+  const { subtotal } = useMemo(
+    () =>
+      calculateOrderTotals({
+        primaryProduct,
+        addons,
+        selectedAddons,
+        date: selectedDate,
+        pricingRules,
+        fulfillmentFee: fulfillmentFeeFor(fulfillmentMethod, deliveryQuote, settings),
+      }),
+    [primaryProduct, addons, selectedAddons, selectedDate, pricingRules, fulfillmentMethod, deliveryQuote, settings],
+  )
 
   return (
     <div className="lg:hidden">
@@ -819,7 +1027,7 @@ export default function BookingPage() {
   return (
     <>
       <Helmet>
-        <title>Book Your Sauna — {SITE_NAME}</title>
+        <title>{`Book Your Sauna — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="Select a date, customize your experience, and reserve your mobile sauna in minutes."
@@ -836,8 +1044,6 @@ export default function BookingPage() {
         <link rel="canonical" href={fullUrl('/book')} />
       </Helmet>
 
-      <HowItWorksSection />
-
       <div className="py-12 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Page Header */}
@@ -849,7 +1055,7 @@ export default function BookingPage() {
           >
             <h1 className="text-4xl md:text-5xl font-bold">Book Your Sauna</h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Select a date, customize your experience, and reserve in minutes.
+              Pick your date, choose delivery or pickup, and reserve in minutes.
             </p>
           </motion.div>
 
@@ -896,7 +1102,7 @@ export default function BookingPage() {
                           DayButton: CustomDayButton,
                         }}
                         classNames={{
-                          root: 'w-full',
+                          root: 'relative w-full',
                           months: 'w-full',
                           month: 'w-full',
                           month_caption: 'flex items-center justify-center mb-4',

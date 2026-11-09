@@ -108,7 +108,7 @@ export default function PrivacyPage() {
   return (
     <>
       <Helmet>
-        <title>Privacy Policy — {SITE_NAME}</title>
+        <title>{`Privacy Policy — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="How Mobile Sauna Rental collects, uses, and protects your personal information. Read our full privacy policy."

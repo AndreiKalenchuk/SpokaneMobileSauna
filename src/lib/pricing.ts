@@ -1,5 +1,8 @@
 import type { Product, PricingRule, Coupon } from '../types';
 
+/** Must match TAX_RATE in supabase/functions/create-payment-intent. */
+export const TAX_RATE = 0.089;
+
 /**
  * Determine the price for a product on a given date by matching pricing rules.
  * Priority: specific_dates (holidays) > day_of_week > base_price.
@@ -56,6 +59,69 @@ export function applyCoupon(subtotal: number, coupon: Coupon | null): number {
   }
 
   return Math.min(coupon.discount_value, subtotal);
+}
+
+export interface OrderLine {
+  name: string;
+  qty: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface OrderTotals {
+  mainPrice: number;
+  addonLines: OrderLine[];
+  fulfillmentFee: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+}
+
+/**
+ * Display totals for a private rental. Mirrors create-payment-intent: the
+ * delivery/pickup fee is part of the taxable subtotal.
+ */
+export function calculateOrderTotals({
+  primaryProduct,
+  addons,
+  selectedAddons,
+  date,
+  pricingRules,
+  fulfillmentFee,
+}: {
+  primaryProduct: Product | undefined;
+  addons: Product[];
+  selectedAddons: { productId: string; quantity: number }[];
+  date: Date | null;
+  pricingRules: PricingRule[];
+  fulfillmentFee: number;
+}): OrderTotals {
+  if (!date || !primaryProduct) {
+    return { mainPrice: 0, addonLines: [], fulfillmentFee: 0, subtotal: 0, tax: 0, total: 0 };
+  }
+
+  const mainPrice = getPriceForDate(primaryProduct, date, pricingRules);
+
+  const addonLines: OrderLine[] = [];
+  for (const sa of selectedAddons) {
+    const product = addons.find((a) => a.id === sa.productId);
+    if (product) {
+      const unitPrice = getPriceForDate(product, date, pricingRules);
+      addonLines.push({
+        name: product.name,
+        qty: sa.quantity,
+        unitPrice,
+        lineTotal: unitPrice * sa.quantity,
+      });
+    }
+  }
+
+  const addonTotal = addonLines.reduce((sum, l) => sum + l.lineTotal, 0);
+  const subtotal = Math.round((mainPrice + addonTotal + fulfillmentFee) * 100) / 100;
+  const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+  const total = Math.round((subtotal + tax) * 100) / 100;
+
+  return { mainPrice, addonLines, fulfillmentFee, subtotal, tax, total };
 }
 
 function formatDateToISO(date: Date): string {

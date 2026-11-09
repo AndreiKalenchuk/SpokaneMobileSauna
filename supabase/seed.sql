@@ -100,7 +100,7 @@ INSERT INTO faqs (question, answer, category, sort_order) VALUES
    'Yes! Contact us for custom multi-day pricing.',
    'Booking & Pricing', 4),
   ('Is there a delivery fee?',
-   'Delivery is free within 25 miles of our home base. Beyond that, a fee of $2.50 per additional mile applies.',
+   'Delivery is {delivery_fee} for the first {included_miles} driving miles, then {extra_mile_rate} per additional mile (we deliver up to {max_miles} miles). Enter your address while booking and we calculate the exact road distance and fee instantly. Delivery includes setup, a safety walkthrough, and pickup the next day. Prefer to pick it up yourself? Pickup is {pickup_price}.',
    'Booking & Pricing', 5);
 
 -- Delivery & Setup
@@ -116,7 +116,10 @@ INSERT INTO faqs (question, answer, category, sort_order) VALUES
    'Delivery & Setup', 3),
   ('What happens if the weather is bad?',
    'Rain, snow, or cold — the sauna runs in any weather! In fact, winter sessions with snowfall are our most popular. We only reschedule for severe weather warnings (thunderstorms, high winds).',
-   'Delivery & Setup', 4);
+   'Delivery & Setup', 4),
+  ('Can I pick up the sauna myself?',
+   'Yes — pickup is {pickup_price}. Our pickup spot is right off {pickup_exit} ({pickup_street}), about one minute from the interstate, so it''s easy in and easy out. We''ll send the exact pickup details after you book.',
+   'Delivery & Setup', 5);
 
 -- Using the Sauna
 INSERT INTO faqs (question, answer, category, sort_order) VALUES

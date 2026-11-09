@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Flame, Instagram, Facebook, Music2, Phone, Mail } from 'lucide-react'
+import { useDeliverySettings } from '@/hooks/useDeliverySettings'
+import { serviceAreaText } from '@/lib/delivery'
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -7,7 +9,6 @@ const navLinks = [
   { label: 'Products', href: '/products' },
   { label: 'Gallery', href: '/gallery' },
   { label: 'FAQ', href: '/faq' },
-  { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ]
 
@@ -17,6 +18,8 @@ const legalLinks = [
 ]
 
 export function Footer() {
+  const deliverySettings = useDeliverySettings()
+
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
@@ -28,7 +31,7 @@ export function Footer() {
               <span>Mobile Sauna</span>
             </Link>
             <p className="text-sm text-primary-foreground/70 leading-relaxed">
-              Premium wood-fired mobile sauna delivered to your door for a 24-hour escape.
+              Premium wood-fired mobile sauna for a 24-hour escape — delivered to your door or picked up right off I-90.
             </p>
           </div>
 
@@ -108,7 +111,7 @@ export function Footer() {
               Service Area
             </h3>
             <p className="text-sm text-primary-foreground/70 leading-relaxed">
-              Proudly serving the greater metro area and surrounding communities within 50 miles.
+              Serving Spokane and surrounding areas. {serviceAreaText(deliverySettings)}.
             </p>
           </div>
         </div>

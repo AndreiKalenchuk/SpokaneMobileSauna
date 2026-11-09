@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { getPriceForDate, applyCoupon } from '../pricing';
+import { getPriceForDate, applyCoupon, calculateOrderTotals } from '../pricing';
 import type { Product, PricingRule, Coupon } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -265,5 +265,61 @@ describe('applyCoupon', () => {
   it('returns 0 for inactive coupon', () => {
     const coupon = makeCoupon({ is_active: false });
     expect(applyCoupon(229, coupon)).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// calculateOrderTotals
+// ---------------------------------------------------------------------------
+
+describe('calculateOrderTotals', () => {
+  const sauna = makeProduct();
+  const plunge = makeAddonProduct();
+  const tuesday = new Date(2026, 2, 17); // weekday → $229
+
+  it('returns zeros without a date', () => {
+    const totals = calculateOrderTotals({
+      primaryProduct: sauna,
+      addons: [plunge],
+      selectedAddons: [],
+      date: null,
+      pricingRules: allRules,
+      fulfillmentFee: 89,
+    });
+    expect(totals.total).toBe(0);
+    expect(totals.fulfillmentFee).toBe(0);
+  });
+
+  it('pickup: rental + add-ons, taxed at 8.9%', () => {
+    const totals = calculateOrderTotals({
+      primaryProduct: sauna,
+      addons: [plunge],
+      selectedAddons: [{ productId: ADDON_ID, quantity: 2 }],
+      date: tuesday,
+      pricingRules: allRules,
+      fulfillmentFee: 0,
+    });
+    expect(totals.mainPrice).toBe(229);
+    expect(totals.addonLines).toEqual([
+      { name: 'Cold Plunge Tub', qty: 2, unitPrice: 19, lineTotal: 38 },
+    ]);
+    expect(totals.subtotal).toBe(267);
+    expect(totals.tax).toBe(23.76);
+    expect(totals.total).toBe(290.76);
+  });
+
+  it('delivery/pickup fee is part of the taxable subtotal', () => {
+    const totals = calculateOrderTotals({
+      primaryProduct: sauna,
+      addons: [plunge],
+      selectedAddons: [],
+      date: tuesday,
+      pricingRules: allRules,
+      fulfillmentFee: 93,
+    });
+    expect(totals.fulfillmentFee).toBe(93);
+    expect(totals.subtotal).toBe(322);
+    expect(totals.tax).toBe(28.66);
+    expect(totals.total).toBe(350.66);
   });
 });

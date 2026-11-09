@@ -177,7 +177,7 @@ export default function ProductsPage() {
   return (
     <>
       <Helmet>
-        <title>Our Rentals — {SITE_NAME}</title>
+        <title>{`Our Rentals — ${SITE_NAME}`}</title>
         <meta
           name="description"
           content="Explore our mobile sauna and add-on rentals. Premium wood-fired sauna, cold plunge tub, firewood bundles, venik, essential oils."

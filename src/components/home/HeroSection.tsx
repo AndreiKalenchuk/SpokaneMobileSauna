@@ -1,18 +1,37 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Star, Users, Truck } from 'lucide-react'
+import { Flame, MapPin, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-const badges = [
-  { icon: Star, label: '4.9 Rating' },
-  { icon: Users, label: '500+ Rentals' },
-  { icon: Truck, label: 'Free Setup & Teardown' },
-]
+import { HERO_IMAGE_URL } from '@/lib/site-config'
+import { useDeliverySettings } from '@/hooks/useDeliverySettings'
 
 export function HeroSection() {
+  const settings = useDeliverySettings()
+  const both = settings.delivery_enabled && settings.pickup_enabled
+
+  const badges = [
+    { icon: Users, label: 'Seats 6' },
+    { icon: Flame, label: 'Wood-Fired Cedar' },
+    {
+      icon: MapPin,
+      label: both
+        ? `Delivery or Pickup off ${settings.pickup_exit}`
+        : settings.delivery_enabled
+          ? 'Delivered & Set Up'
+          : `Pickup off ${settings.pickup_exit}`,
+    },
+  ]
+
+  const subtitle = both
+    ? 'delivered and set up at your place, or picked up a minute off the interstate.'
+    : settings.delivery_enabled
+      ? 'delivered and set up at your place.'
+      : `picked up right off ${settings.pickup_exit}.`
+
   return (
-    <section className="relative -mt-16 flex min-h-[clamp(440px,52svh,620px)] items-center justify-center overflow-hidden">
+    <section className="relative -mt-16 flex min-h-[clamp(480px,62svh,680px)] items-center justify-center overflow-hidden">
       <img
-        src="https://images.unsplash.com/photo-1554244933-d876deb6b2ff?auto=format&fit=crop&w=2000&q=80"
+        src={HERO_IMAGE_URL}
         alt=""
         width={2000}
         height={1333}
@@ -28,20 +47,27 @@ export function HeroSection() {
         className="relative z-10 mx-auto max-w-3xl px-4 pt-20 pb-8 text-center text-white sm:px-6 md:pt-20 md:pb-10"
       >
         <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl">
-          Bring the Sauna to You
+          Your Private Sauna, for a Whole Day
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/85 md:text-lg">
-          Premium wood-fired mobile sauna delivered to your door for a 24-hour escape.
+          A wood-fired cedar sauna for 24 hours — {subtitle}
         </p>
 
-        <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+        <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <Button
+            asChild
+            size="lg"
+            className="h-12 bg-accent px-8 text-base text-accent-foreground hover:bg-accent/90"
+          >
+            <Link to="/book">Book Your Date</Link>
+          </Button>
           <Button
             asChild
             variant="outline"
             size="lg"
-            className="h-11 border-white/30 bg-white/10 px-7 text-base text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
+            className="h-12 border-white/30 bg-white/10 px-7 text-base text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
           >
-            <a href="#booking-options">See Booking Options</a>
+            <a href="#how-it-works">How It Works</a>
           </Button>
         </div>
 

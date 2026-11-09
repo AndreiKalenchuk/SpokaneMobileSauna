@@ -6,12 +6,9 @@ import { MobileMenu } from './MobileMenu'
 
 const navLinks = [
   { label: 'Home', href: '/' },
-  { label: 'Private Sauna', href: '/book' },
-  { label: 'Community Sauna', href: '/community' },
   { label: 'Products', href: '/products' },
   { label: 'Gallery', href: '/gallery' },
   { label: 'FAQ', href: '/faq' },
-  { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ]
 
@@ -62,6 +59,9 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            <Button asChild size="sm" className="ml-2">
+              <Link to="/book">Book Now</Link>
+            </Button>
           </nav>
 
           <Button
