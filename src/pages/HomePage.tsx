@@ -23,7 +23,7 @@ export default function HomePage() {
         <title>{`Book Your Mobile Sauna — ${SITE_NAME}`}</title>
         <meta
           name="description"
-          content="Premium wood-fired mobile sauna for 24 hours. Delivered and set up at your door, or picked up right off I-90 in Spokane. Seats 6. From $229/day."
+          content="Premium wood-fired mobile sauna for 24 hours. Delivered and set up at your door, or picked up right off I-90 in Spokane. Seats up to 6. From $229/day."
         />
         <meta property="og:title" content={`Book Your Mobile Sauna — ${SITE_NAME}`} />
         <meta
@@ -53,7 +53,7 @@ export default function HomePage() {
             openingHours: 'Mo-Su 08:00-20:00',
             priceRange: '$$',
             description:
-              'Premium wood-fired mobile sauna rentals in Spokane — delivered and set up at your door, or picked up off I-90. Seats 6, health benefits, muscle recovery.',
+              'Premium wood-fired mobile sauna rentals in Spokane — delivered and set up at your door, or picked up off I-90. Seats up to 6, health benefits, muscle recovery.',
           })}
         </script>
       </Helmet>

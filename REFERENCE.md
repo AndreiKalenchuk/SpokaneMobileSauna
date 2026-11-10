@@ -236,7 +236,7 @@ supabase.from('pricing_rules').upsert(pricingData)
 3. **Featured Product Card**
    - Large image of the sauna (interior + exterior split or carousel)
    - Name: "The [Sauna Name]"
-   - Quick specs: seats 6, wood-fired, cedar interior, includes bucket & ladle, towels, thermometer
+   - Quick specs: seats up to 6, wood-fired, cedar interior, includes bucket & ladle, towels, thermometer
    - Starting price: "From $XXX / day"
    - CTA: **"Book Now"** and **"Learn More"**
 
@@ -407,7 +407,7 @@ supabase.from('pricing_rules').upsert(pricingData)
 - "Can you deliver to any location?" → "We deliver to private residences, Airbnb properties, event venues, and campsites within our service area. Contact us for special locations."
 
 *Using the Sauna:*
-- "How many people can fit?" → "The sauna comfortably seats 6 adults."
+- "How many people can fit?" → "The sauna comfortably seats up to 6 adults."
 - "How hot does it get?" → "Our wood-fired sauna reaches 150–200°F (65–93°C)."
 - "How much firewood is included?" → "1 bundle is included (2–3 hours of burn time). You can add extra bundles for $XX each."
 - "Can I use the sauna in winter?" → "Absolutely — winter is the best time! The contrast of cold air and hot sauna is an incredible experience."

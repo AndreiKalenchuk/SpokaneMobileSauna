@@ -10,7 +10,7 @@ export function HeroSection() {
   const both = settings.delivery_enabled && settings.pickup_enabled
 
   const badges = [
-    { icon: Users, label: 'Seats 6' },
+    { icon: Users, label: 'Seats up to 6' },
     { icon: Flame, label: 'Wood-Fired Cedar' },
     {
       icon: MapPin,
