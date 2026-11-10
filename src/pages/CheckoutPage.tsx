@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useId } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { SITE_NAME, fullUrl, DEFAULT_OG_IMAGE } from '@/lib/site-config'
 import { useForm } from 'react-hook-form'
@@ -13,6 +14,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Clock,
   CreditCard,
   Loader2,
   ShieldCheck,
@@ -20,7 +22,9 @@ import {
   Calendar,
   Pencil,
   MapPin,
+  Tag,
   Truck,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -33,10 +37,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { useProducts } from '@/hooks/useProducts'
 import { usePricingRules } from '@/hooks/usePricingRules'
 import { useDeliverySettings } from '@/hooks/useDeliverySettings'
+import { useCoupon, couponQueryOptions } from '@/hooks/useCoupon'
 import { getPriceForDate, calculateOrderTotals } from '@/lib/pricing'
 import type { OrderTotals } from '@/lib/pricing'
 import { fulfillmentFeeFor } from '@/lib/delivery'
-import { stripePromise, createPaymentIntent } from '@/lib/stripe'
+import { COUPON_REASON_MESSAGES, describeCoupon, normalizeCouponCode } from '@/lib/coupons'
+import type { CouponOffer } from '@/lib/coupons'
+import { stripePromise, createPaymentIntent, CheckoutError } from '@/lib/stripe'
 import type { PaymentIntentResponse } from '@/lib/stripe'
 import { useBookingStore } from '@/stores/bookingStore'
 import { rentalTermsSections } from '@/pages/TermsPage'
@@ -135,6 +142,7 @@ function useOrderCalculations(
   primaryProduct: Product | undefined,
   addons: Product[],
   pricingRules: PricingRule[],
+  coupon: CouponOffer | null,
 ): OrderTotals {
   const { selectedDate, selectedAddons, fulfillmentMethod, deliveryQuote } = useBookingStore()
   const settings = useDeliverySettings()
@@ -148,18 +156,135 @@ function useOrderCalculations(
         date: selectedDate,
         pricingRules,
         fulfillmentFee: fulfillmentFeeFor(fulfillmentMethod, deliveryQuote, settings),
+        coupon,
       }),
-    [selectedDate, primaryProduct, pricingRules, selectedAddons, addons, fulfillmentMethod, deliveryQuote, settings],
+    [selectedDate, primaryProduct, pricingRules, selectedAddons, addons, fulfillmentMethod, deliveryQuote, settings, coupon],
+  )
+}
+
+// --- Coupon ---
+
+/**
+ * Applied code + its live check. The coupon field only stores codes the server
+ * accepted; the server re-checks on submit and decides the actual discount.
+ */
+function CouponField({
+  coupon,
+  editable,
+}: {
+  /** The coupon the totals use (null when none applies) */
+  coupon: CouponOffer | null
+  editable: boolean
+}) {
+  const inputId = useId()
+  const queryClient = useQueryClient()
+  const { couponCode, setCouponCode } = useBookingStore()
+  const check = useCoupon(couponCode ?? '')
+  const [draft, setDraft] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [checking, setChecking] = useState(false)
+
+  const handleApply = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const code = normalizeCouponCode(draft)
+    if (!code) return
+    setChecking(true)
+    setError(null)
+    try {
+      const result = await queryClient.fetchQuery(couponQueryOptions(code))
+      if (result.valid) {
+        setCouponCode(result.code)
+        setDraft('')
+      } else {
+        setError(COUPON_REASON_MESSAGES[result.reason])
+      }
+    } catch {
+      setError('Could not check that code. Please try again.')
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  if (couponCode) {
+    const lostReason = !coupon && check.data && !check.data.valid ? check.data.reason : null
+    return (
+      <div
+        className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm ${
+          lostReason ? 'border-destructive/30 bg-destructive/5' : 'border-primary/30 bg-primary/5'
+        }`}
+      >
+        <div className="flex min-w-0 items-start gap-2">
+          <Tag className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <p className="font-medium break-all">{couponCode}</p>
+            <p className={`text-xs ${lostReason ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {coupon
+                ? `${describeCoupon(coupon)} applied`
+                : lostReason
+                  ? COUPON_REASON_MESSAGES[lostReason]
+                  : 'Checking…'}
+            </p>
+          </div>
+        </div>
+        {editable && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Remove coupon"
+            onClick={() => setCouponCode(null)}
+          >
+            <X className="size-4" />
+          </Button>
+        )}
+      </div>
+    )
+  }
+
+  if (!editable) return null
+
+  return (
+    <form onSubmit={handleApply} className="space-y-1.5">
+      <Label
+        htmlFor={inputId}
+        className="text-xs text-muted-foreground uppercase tracking-wider font-medium"
+      >
+        Coupon code
+      </Label>
+      <div className="flex gap-2">
+        <Input
+          id={inputId}
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value.toUpperCase())
+            setError(null)
+          }}
+          placeholder="Enter code"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          aria-invalid={!!error}
+        />
+        <Button type="submit" variant="outline" disabled={!draft.trim() || checking}>
+          {checking ? <Loader2 className="size-4 animate-spin" /> : 'Apply'}
+        </Button>
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </form>
   )
 }
 
 function OrderSummary({
   primaryProduct,
   calculations,
+  coupon,
+  couponEditable,
   collapsible,
 }: {
   primaryProduct: Product
   calculations: OrderTotals
+  coupon: CouponOffer | null
+  couponEditable: boolean
   collapsible?: boolean
 }) {
   const { selectedDate, fulfillmentMethod, deliveryAddress, deliveryQuote } = useBookingStore()
@@ -234,6 +359,8 @@ function OrderSummary({
         )}
       </div>
 
+      <CouponField coupon={coupon} editable={couponEditable} />
+
       <Separator />
 
       {/* Totals */}
@@ -242,6 +369,12 @@ function OrderSummary({
           <span>Subtotal</span>
           <span>{formatCurrency(calculations.subtotal)}</span>
         </div>
+        {calculations.discount > 0 && coupon && (
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Discount ({coupon.code})</span>
+            <span className="text-green-700">-{formatCurrency(calculations.discount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Tax</span>
           <span>{formatCurrency(calculations.tax)}</span>
@@ -478,22 +611,49 @@ function CustomerInfoForm({
 
 // --- Payment Form (inside Stripe Elements) ---
 
+/** Whole seconds until `deadline` (ms timestamp), ticking every second; null without one. */
+function useSecondsLeft(deadline: number | null): number | null {
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (deadline === null) return
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [deadline])
+
+  return deadline === null ? null : Math.max(0, Math.ceil((deadline - now) / 1000))
+}
+
+function formatCountdown(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+}
+
 function PaymentForm({
   total,
   bookingId,
+  holdDeadline,
+  onRenewHold,
+  renewing,
 }: {
   total: number
   bookingId: string
+  /** When the server releases this unpaid booking (ms timestamp) */
+  holdDeadline: number | null
+  onRenewHold: () => void
+  renewing: boolean
 }) {
   const stripe = useStripe()
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [paymentReady, setPaymentReady] = useState(false)
+  const secondsLeft = useSecondsLeft(holdDeadline)
+  // Paying after this is pointless: the date may already be someone else's
+  const holdExpired = secondsLeft === 0 && !isProcessing
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!stripe || !elements) return
+    if (!stripe || !elements || holdExpired) return
 
     setIsProcessing(true)
     setPaymentError(null)
@@ -518,6 +678,38 @@ function PaymentForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {holdExpired ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-destructive">
+            Your hold on this date has ended. It may still be free.
+          </p>
+          <Button type="button" size="sm" onClick={onRenewHold} disabled={renewing}>
+            {renewing && <Loader2 className="mr-2 size-4 animate-spin" />}
+            Hold it again
+          </Button>
+        </div>
+      ) : (
+        secondsLeft !== null && (
+          <div
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm ${
+              secondsLeft <= 120
+                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                : 'bg-muted/30 text-muted-foreground'
+            }`}
+            role="timer"
+            aria-live={secondsLeft <= 60 ? 'polite' : 'off'}
+          >
+            <Clock className="size-4 shrink-0" />
+            <span>
+              Your date is held for you for{' '}
+              <span className="font-semibold tabular-nums text-foreground">
+                {formatCountdown(secondsLeft)}
+              </span>
+            </span>
+          </div>
+        )
+      )}
+
       {paymentError && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -552,7 +744,7 @@ function PaymentForm({
         type="submit"
         size="lg"
         className="w-full h-12 text-base"
-        disabled={!stripe || isProcessing || !paymentReady}
+        disabled={!stripe || isProcessing || !paymentReady || holdExpired}
       >
         {isProcessing ? (
           <>
@@ -579,14 +771,28 @@ function CheckoutContent({
   pricingRules: PricingRule[]
 }) {
   const navigate = useNavigate()
-  const { selectedDate, selectedAddons, fulfillmentMethod, deliveryAddress, deliveryQuote } =
+  const queryClient = useQueryClient()
+  const { selectedDate, selectedAddons, fulfillmentMethod, deliveryAddress, deliveryQuote, couponCode } =
     useBookingStore()
   const [step, setStep] = useState<'info' | 'payment'>('info')
   const [customerData, setCustomerData] = useState<CustomerFormValues | null>(null)
   const [paymentIntent, setPaymentIntent] = useState<PaymentIntentResponse | null>(null)
   const [isCreatingIntent, setIsCreatingIntent] = useState(false)
+  // The coupon the current PaymentIntent was priced with. Our own pending
+  // booking holds one of its uses, so a live re-check may now say "used up" —
+  // keep honouring it; on resubmit the server releases that booking first.
+  const [chargedCoupon, setChargedCoupon] = useState<CouponOffer | null>(null)
+  const [holdDeadline, setHoldDeadline] = useState<number | null>(null)
 
-  const calculations = useOrderCalculations(primaryProduct, addons, pricingRules)
+  const liveCheck = useCoupon(couponCode ?? '')
+  const coupon =
+    chargedCoupon && chargedCoupon.code === couponCode
+      ? chargedCoupon
+      : couponCode && liveCheck.data?.valid
+        ? liveCheck.data
+        : null
+
+  const calculations = useOrderCalculations(primaryProduct, addons, pricingRules, coupon)
   const settings = useDeliverySettings()
 
   // Delivery needs an in-area quote from /book; pickup needs nothing else
@@ -634,6 +840,8 @@ function CheckoutContent({
         rental_date: formatDateToISO(selectedDate),
         fulfillment_method: fulfillmentMethod,
         items,
+        coupon_code: coupon?.code,
+        replace_booking_id: paymentIntent?.bookingId,
         customer: {
           name: data.name,
           email: data.email,
@@ -646,9 +854,18 @@ function CheckoutContent({
         total_amount: calculations.total,
       })
 
+      setChargedCoupon(coupon)
+      setHoldDeadline(
+        result.holdSeconds === undefined ? null : Date.now() + result.holdSeconds * 1000,
+      )
       setPaymentIntent(result)
       setStep('payment')
     } catch (err) {
+      if (err instanceof CheckoutError && err.couponReason) {
+        // Show the coupon's new state (e.g. someone took the last use)
+        setChargedCoupon(null)
+        queryClient.invalidateQueries({ queryKey: ['coupon'] })
+      }
       toast.error(
         err instanceof Error && err.message !== 'Edge Function returned a non-2xx status code'
           ? err.message
@@ -702,6 +919,8 @@ function CheckoutContent({
                 <OrderSummary
                   primaryProduct={primaryProduct}
                   calculations={calculations}
+                  coupon={coupon}
+                  couponEditable={step === 'info' && !isCreatingIntent}
                   collapsible
                 />
               </div>
@@ -776,6 +995,8 @@ function CheckoutContent({
                         )}
 
                         <Elements
+                          // A renewed hold is a new PaymentIntent; Elements can't swap secrets
+                          key={paymentIntent.clientSecret}
                           stripe={stripePromise}
                           options={{
                             clientSecret: paymentIntent.clientSecret,
@@ -789,8 +1010,11 @@ function CheckoutContent({
                           }}
                         >
                           <PaymentForm
-                            total={calculations.total}
+                            total={paymentIntent.totalAmount ?? calculations.total}
                             bookingId={paymentIntent.bookingId}
+                            holdDeadline={holdDeadline}
+                            onRenewHold={() => customerData && handleCustomerSubmit(customerData)}
+                            renewing={isCreatingIntent}
                           />
                         </Elements>
                       </CardContent>
@@ -816,6 +1040,8 @@ function CheckoutContent({
                 <OrderSummary
                   primaryProduct={primaryProduct}
                   calculations={calculations}
+                  coupon={coupon}
+                  couponEditable={step === 'info' && !isCreatingIntent}
                 />
               </div>
             </div>

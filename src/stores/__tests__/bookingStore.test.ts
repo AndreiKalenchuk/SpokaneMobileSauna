@@ -53,3 +53,19 @@ describe('bookingStore — fulfillment', () => {
     expect(useBookingStore.getState().deliveryAddress).toBe('')
   })
 })
+
+describe('bookingStore — coupon', () => {
+  beforeEach(() => useBookingStore.getState().reset())
+
+  it('holds the applied code until removed or reset', () => {
+    const s = useBookingStore.getState()
+    expect(s.couponCode).toBeNull()
+    s.setCouponCode('SAUNA10')
+    expect(useBookingStore.getState().couponCode).toBe('SAUNA10')
+    s.setCouponCode(null)
+    expect(useBookingStore.getState().couponCode).toBeNull()
+    s.setCouponCode('SAUNA10')
+    s.reset()
+    expect(useBookingStore.getState().couponCode).toBeNull()
+  })
+})

@@ -1,4 +1,6 @@
-import type { Product, PricingRule, Coupon } from '../types';
+import type { Product, PricingRule } from '../types';
+import { couponDiscount } from './coupons';
+import type { CouponOffer } from './coupons';
 
 /** Must match TAX_RATE in supabase/functions/create-payment-intent. */
 export const TAX_RATE = 0.089;
@@ -39,28 +41,6 @@ export function getPriceForDate(
   return bestRule ? bestRule.price : product.base_price;
 }
 
-/**
- * Calculate the discount amount for a given subtotal and coupon.
- * Returns 0 if the coupon is invalid, expired, or the order doesn't meet minimums.
- */
-export function applyCoupon(subtotal: number, coupon: Coupon | null): number {
-  if (!coupon || !coupon.is_active) return 0;
-
-  const now = new Date();
-  if (coupon.starts_at && new Date(coupon.starts_at) > now) return 0;
-  if (coupon.expires_at && new Date(coupon.expires_at) < now) return 0;
-  if (coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses)
-    return 0;
-  if (coupon.min_order_amount !== null && subtotal < coupon.min_order_amount)
-    return 0;
-
-  if (coupon.discount_type === 'percent') {
-    return Math.round(subtotal * (coupon.discount_value / 100) * 100) / 100;
-  }
-
-  return Math.min(coupon.discount_value, subtotal);
-}
-
 export interface OrderLine {
   name: string;
   qty: number;
@@ -73,13 +53,15 @@ export interface OrderTotals {
   addonLines: OrderLine[];
   fulfillmentFee: number;
   subtotal: number;
+  discount: number;
   tax: number;
   total: number;
 }
 
 /**
  * Display totals for a private rental. Mirrors create-payment-intent: the
- * delivery/pickup fee is part of the taxable subtotal.
+ * delivery/pickup fee is part of the subtotal, the coupon comes off the
+ * subtotal, and tax is charged on what's left.
  */
 export function calculateOrderTotals({
   primaryProduct,
@@ -88,6 +70,7 @@ export function calculateOrderTotals({
   date,
   pricingRules,
   fulfillmentFee,
+  coupon = null,
 }: {
   primaryProduct: Product | undefined;
   addons: Product[];
@@ -95,9 +78,10 @@ export function calculateOrderTotals({
   date: Date | null;
   pricingRules: PricingRule[];
   fulfillmentFee: number;
+  coupon?: CouponOffer | null;
 }): OrderTotals {
   if (!date || !primaryProduct) {
-    return { mainPrice: 0, addonLines: [], fulfillmentFee: 0, subtotal: 0, tax: 0, total: 0 };
+    return { mainPrice: 0, addonLines: [], fulfillmentFee: 0, subtotal: 0, discount: 0, tax: 0, total: 0 };
   }
 
   const mainPrice = getPriceForDate(primaryProduct, date, pricingRules);
@@ -118,10 +102,12 @@ export function calculateOrderTotals({
 
   const addonTotal = addonLines.reduce((sum, l) => sum + l.lineTotal, 0);
   const subtotal = Math.round((mainPrice + addonTotal + fulfillmentFee) * 100) / 100;
-  const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
-  const total = Math.round((subtotal + tax) * 100) / 100;
+  const discount = couponDiscount(subtotal, coupon);
+  const taxable = Math.round((subtotal - discount) * 100) / 100;
+  const tax = Math.round(taxable * TAX_RATE * 100) / 100;
+  const total = Math.round((taxable + tax) * 100) / 100;
 
-  return { mainPrice, addonLines, fulfillmentFee, subtotal, tax, total };
+  return { mainPrice, addonLines, fulfillmentFee, subtotal, discount, tax, total };
 }
 
 function formatDateToISO(date: Date): string {

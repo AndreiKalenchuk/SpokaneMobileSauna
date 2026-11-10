@@ -12,6 +12,8 @@ interface BookingState {
   fulfillmentMethod: FulfillmentMethod | null
   deliveryAddress: string
   deliveryQuote: DeliveryQuote | null
+  /** A code check_coupon() accepted; checkout re-checks it and the server decides. */
+  couponCode: string | null
 
   setSelectedDate: (date: Date | null) => void
   toggleAddon: (productId: string) => void
@@ -19,6 +21,7 @@ interface BookingState {
   setFulfillmentMethod: (method: FulfillmentMethod) => void
   setDeliveryAddress: (address: string) => void
   setDeliveryQuote: (quote: DeliveryQuote | null) => void
+  setCouponCode: (code: string | null) => void
   reset: () => void
 }
 
@@ -28,6 +31,7 @@ export const useBookingStore = create<BookingState>((set) => ({
   fulfillmentMethod: null,
   deliveryAddress: '',
   deliveryQuote: null,
+  couponCode: null,
 
   setSelectedDate: (date) => set({ selectedDate: date }),
 
@@ -66,6 +70,8 @@ export const useBookingStore = create<BookingState>((set) => ({
 
   setDeliveryQuote: (quote) => set({ deliveryQuote: quote }),
 
+  setCouponCode: (code) => set({ couponCode: code }),
+
   reset: () =>
     set({
       selectedDate: null,
@@ -73,5 +79,6 @@ export const useBookingStore = create<BookingState>((set) => ({
       fulfillmentMethod: null,
       deliveryAddress: '',
       deliveryQuote: null,
+      couponCode: null,
     }),
 }))

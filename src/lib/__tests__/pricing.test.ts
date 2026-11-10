@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { getPriceForDate, applyCoupon, calculateOrderTotals } from '../pricing';
-import type { Product, PricingRule, Coupon } from '../../types';
+import { describe, it, expect } from 'vitest';
+import { getPriceForDate, calculateOrderTotals } from '../pricing';
+import type { Product, PricingRule } from '../../types';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -69,23 +69,6 @@ const addonRules: PricingRule[] = [
 ];
 
 const allRules = [...saunaRules, ...addonRules];
-
-function makeCoupon(overrides: Partial<Coupon> = {}): Coupon {
-  return {
-    id: 'coupon-0001',
-    code: 'frends50',
-    discount_type: 'percent',
-    discount_value: 50,
-    min_order_amount: null,
-    max_uses: null,
-    current_uses: 0,
-    starts_at: null,
-    expires_at: null,
-    is_active: true,
-    created_at: '2026-01-01T00:00:00Z',
-    ...overrides,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // getPriceForDate
@@ -185,90 +168,6 @@ describe('getPriceForDate', () => {
 });
 
 // ---------------------------------------------------------------------------
-// applyCoupon
-// ---------------------------------------------------------------------------
-
-describe('applyCoupon', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  // --- Happy Path ---
-
-  it('frends50: 50% off $229 = $114.50', () => {
-    const coupon = makeCoupon({ discount_type: 'percent', discount_value: 50 });
-    expect(applyCoupon(229, coupon)).toBe(114.5);
-  });
-
-  it('frends-50: $50 fixed off $229 = $50', () => {
-    const coupon = makeCoupon({ code: 'frends-50', discount_type: 'fixed', discount_value: 50 });
-    expect(applyCoupon(229, coupon)).toBe(50);
-  });
-
-  it('active coupon with no constraints applies correctly', () => {
-    const coupon = makeCoupon({ discount_type: 'percent', discount_value: 10 });
-    expect(applyCoupon(100, coupon)).toBe(10);
-  });
-
-  // --- Edge Cases ---
-
-  it('fixed discount larger than subtotal is capped at subtotal', () => {
-    const coupon = makeCoupon({ discount_type: 'fixed', discount_value: 500 });
-    expect(applyCoupon(30, coupon)).toBe(30);
-  });
-
-  it('100% percent discount returns the full subtotal', () => {
-    const coupon = makeCoupon({ discount_type: 'percent', discount_value: 100 });
-    expect(applyCoupon(229, coupon)).toBe(229);
-  });
-
-  it('$0 subtotal with percent coupon returns 0', () => {
-    const coupon = makeCoupon({ discount_type: 'percent', discount_value: 50 });
-    expect(applyCoupon(0, coupon)).toBe(0);
-  });
-
-  it('$0 subtotal with fixed coupon returns 0', () => {
-    const coupon = makeCoupon({ discount_type: 'fixed', discount_value: 50 });
-    expect(applyCoupon(0, coupon)).toBe(0);
-  });
-
-  it('returns 0 when subtotal is below min_order_amount', () => {
-    const coupon = makeCoupon({ min_order_amount: 100 });
-    expect(applyCoupon(50, coupon)).toBe(0);
-  });
-
-  it('returns 0 when coupon is at max_uses', () => {
-    const coupon = makeCoupon({ max_uses: 10, current_uses: 10 });
-    expect(applyCoupon(229, coupon)).toBe(0);
-  });
-
-  it('returns 0 when coupon starts_at is in the future', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-01-01'));
-    const coupon = makeCoupon({ starts_at: '2026-06-01T00:00:00Z' });
-    expect(applyCoupon(229, coupon)).toBe(0);
-  });
-
-  it('returns 0 when coupon expires_at is in the past', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-06-01'));
-    const coupon = makeCoupon({ expires_at: '2026-01-01T00:00:00Z' });
-    expect(applyCoupon(229, coupon)).toBe(0);
-  });
-
-  // --- Negative Testing ---
-
-  it('returns 0 for null coupon', () => {
-    expect(applyCoupon(229, null)).toBe(0);
-  });
-
-  it('returns 0 for inactive coupon', () => {
-    const coupon = makeCoupon({ is_active: false });
-    expect(applyCoupon(229, coupon)).toBe(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // calculateOrderTotals
 // ---------------------------------------------------------------------------
 
@@ -321,5 +220,50 @@ describe('calculateOrderTotals', () => {
     expect(totals.subtotal).toBe(322);
     expect(totals.tax).toBe(28.66);
     expect(totals.total).toBe(350.66);
+  });
+
+  it('no coupon → no discount', () => {
+    const totals = calculateOrderTotals({
+      primaryProduct: sauna,
+      addons: [],
+      selectedAddons: [],
+      date: tuesday,
+      pricingRules: allRules,
+      fulfillmentFee: 89,
+    });
+    expect(totals.discount).toBe(0);
+    expect(totals.subtotal).toBe(318);
+    expect(totals.total).toBe(346.3);
+  });
+
+  it('percent coupon comes off the subtotal (incl. delivery); tax is on the rest', () => {
+    const totals = calculateOrderTotals({
+      primaryProduct: sauna,
+      addons: [],
+      selectedAddons: [],
+      date: tuesday,
+      pricingRules: allRules,
+      fulfillmentFee: 89,
+      coupon: { code: 'SAVE10', discount_type: 'percent', discount_value: 10 },
+    });
+    expect(totals.subtotal).toBe(318);
+    expect(totals.discount).toBe(31.8);
+    expect(totals.tax).toBe(25.47); // 286.20 × 8.9%
+    expect(totals.total).toBe(311.67);
+  });
+
+  it('fixed coupon', () => {
+    const totals = calculateOrderTotals({
+      primaryProduct: sauna,
+      addons: [],
+      selectedAddons: [],
+      date: tuesday,
+      pricingRules: allRules,
+      fulfillmentFee: 0,
+      coupon: { code: 'FIFTY', discount_type: 'fixed', discount_value: 50 },
+    });
+    expect(totals.discount).toBe(50);
+    expect(totals.tax).toBe(15.93); // 179 × 8.9%
+    expect(totals.total).toBe(194.93);
   });
 });

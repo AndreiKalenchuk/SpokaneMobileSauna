@@ -13,6 +13,7 @@ export const TEST_IDS = {
   pricingRule: 'bbbbbbbb-bbbb-4000-8000-000000000001',
   pricingRuleInactive: 'bbbbbbbb-bbbb-4000-8000-000000000002',
   coupon: 'cccccccc-cccc-4000-8000-000000000001',
+  couponExpired: 'cccccccc-cccc-4000-8000-000000000002',
   blockedDate: 'dddddddd-dddd-4000-8000-000000000001',
   galleryImage: 'eeeeeeee-eeee-4000-8000-000000000001',
   galleryImageInactive: 'eeeeeeee-eeee-4000-8000-000000000002',
@@ -21,6 +22,13 @@ export const TEST_IDS = {
   faq: '11111111-1111-4000-8000-000000000001',
   faqInactive: '11111111-1111-4000-8000-000000000002',
   booking: '22222222-2222-4000-8000-000000000001',
+  // Created inside the coupon-trigger test (2099 dates can't clash with real bookings)
+  couponBookingA: '22222222-2222-4000-8000-00000000000a',
+  couponBookingB: '22222222-2222-4000-8000-00000000000b',
+  couponBookingC: '22222222-2222-4000-8000-00000000000c',
+  // Created inside the hold-expiry test
+  expiredHoldBooking: '22222222-2222-4000-8000-00000000000d',
+  freshHoldBooking: '22222222-2222-4000-8000-00000000000e',
   bookingItem: '33333333-3333-4000-8000-000000000001',
 } as const;
 
@@ -79,13 +87,26 @@ export async function insertTestData() {
   ]);
 
   // Coupons
-  await insert('coupons', {
-    id: TEST_IDS.coupon,
-    code: 'test-integration-coupon',
-    discount_type: 'percent',
-    discount_value: 25,
-    is_active: true,
-  });
+  await insert('coupons', [
+    {
+      id: TEST_IDS.coupon,
+      code: 'TEST-INTEGRATION',
+      discount_type: 'percent',
+      discount_value: 25,
+      max_uses: 2,
+      expires_on: '2099-12-31',
+      is_active: true,
+    },
+    {
+      id: TEST_IDS.couponExpired,
+      code: 'TEST-INTEGRATION-OLD',
+      discount_type: 'fixed',
+      discount_value: 10,
+      max_uses: 5,
+      expires_on: '2020-01-01',
+      is_active: true,
+    },
+  ]);
 
   // Blocked dates
   await insert('blocked_dates', {
@@ -185,10 +206,20 @@ export async function cleanupTestData() {
 
   // Delete in FK-safe order
   await testSupabase.from('booking_items').delete().eq('id', ids.bookingItem);
-  await testSupabase.from('bookings').delete().eq('id', ids.booking);
+  await testSupabase
+    .from('bookings')
+    .delete()
+    .in('id', [
+      ids.booking,
+      ids.couponBookingA,
+      ids.couponBookingB,
+      ids.couponBookingC,
+      ids.expiredHoldBooking,
+      ids.freshHoldBooking,
+    ]);
   await testSupabase.from('pricing_rules').delete().in('id', [ids.pricingRule, ids.pricingRuleInactive]);
   await testSupabase.from('products').delete().in('id', [ids.product, ids.productInactive]);
-  await testSupabase.from('coupons').delete().eq('id', ids.coupon);
+  await testSupabase.from('coupons').delete().in('id', [ids.coupon, ids.couponExpired]);
   await testSupabase.from('blocked_dates').delete().eq('id', ids.blockedDate);
   await testSupabase.from('gallery_images').delete().in('id', [ids.galleryImage, ids.galleryImageInactive]);
   await testSupabase.from('testimonials').delete().in('id', [ids.testimonial, ids.testimonialInactive]);

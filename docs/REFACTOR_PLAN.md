@@ -85,7 +85,8 @@ Nav: Home · Products · Gallery · FAQ · Contact + a **Book Now** button (was 
 
 - [x] RLS: anon limited to `bookings(rental_date, status)`; confirmation page reads via `get_booking_confirmation(uuid)` (migration 020) — also fixes line items never showing to customers
 - [x] Broken product `image_url`s cleared; admin photo upload/remove via the `product-images` bucket (migration 021)
-- [!] `coupons` is anon-readable in full (`USING (true)`): anyone can list discount codes
+- [x] `coupons` was anon-readable in full: anon access revoked and the two existing codes deactivated as leaked (migration 022)
+- [x] Abandoned checkouts: unpaid `pending` bookings hold their date (and coupon use) for 10 minutes (`bookings.hold_expires_at`), then a `pg_cron` job cancels them every minute (migration 024). Checkout counts down, disables Pay at zero and offers "Hold it again"; a payment that lands after expiry is reinstated if the date is still free, otherwise refunded automatically by `stripe-webhook` with customer + owner emails
 - [!] Copy inconsistencies to settle: cancellation window (FAQ 72h vs email 48h), clearance (booking page 4 ft vs Terms 10 ft)
 - [!] Hero/testimonial claims: the old "4.9 Rating / 500+ Rentals" badges were replaced with factual ones; seeded testimonials should be real before launch
 
@@ -97,9 +98,17 @@ Nav: Home · Products · Gallery · FAQ · Contact + a **Book Now** button (was 
 - [x] `{token}` placeholders in settings text and FAQ answers
 - [x] Community functions: verified never deployed (`supabase functions list`) — nothing to delete
 
+## Phase 6 — Coupons
+
+- [x] Admin → Settings → Coupons: code (letters/numbers, Generate button), percent or $ off, expiration date, number of coupons; live used/left counts, on/off, delete when unused
+- [x] Customers check one code at a time via `check_coupon()` — no ids, counts or listing (migration 023)
+- [x] `coupons.current_uses` kept by a trigger on `bookings`: a use is taken at checkout (atomically — the last use goes to exactly one customer) and given back on cancel/delete
+- [x] Discount math shared by checkout and `create-payment-intent` (`supabase/functions/_shared/coupons.ts`); tax applies after the discount
+- [x] Going back from the payment step releases the customer’s own unpaid booking (`replace_booking_id`) instead of blocking their date
+
 ## Deploy order (owner)
 
 1. Secret: Dashboard → Edge Functions → Secrets → add `DELIVERY_ORIGIN` (value from `.env`), or `NO_PROXY="*" supabase secrets set DELIVERY_ORIGIN=<lat,lng>`
-2. Migrations: `NO_PROXY="*" supabase db push` (017–021), or paste each file into Dashboard → SQL Editor in order
+2. Migrations: `NO_PROXY="*" supabase db push` (017–024), or paste each file into Dashboard → SQL Editor in order
 3. `NO_PROXY="*" supabase functions deploy delivery-quote create-payment-intent stripe-webhook`
-4. Push the frontend (Netlify). The confirmation page works before and after migration 020.
+4. Push the frontend (Netlify) — only after step 3: a coupon-aware checkout talking to an older `create-payment-intent` would show a discount the server doesn’t apply.

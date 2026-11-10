@@ -3,6 +3,7 @@ import { BlockedDatesTab } from '@/components/admin/BlockedDatesTab'
 import { ProductsTab } from '@/components/admin/ProductsTab'
 import { PricingRulesTab } from '@/components/admin/PricingRulesTab'
 import { DeliverySettingsTab } from '@/components/admin/DeliverySettingsTab'
+import { CouponsTab } from '@/components/admin/CouponsTab'
 
 export default function AdminSettingsPage() {
   return (
@@ -15,6 +16,7 @@ export default function AdminSettingsPage() {
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="pricing-rules">Pricing Rules</TabsTrigger>
           <TabsTrigger value="delivery">Delivery & Pickup</TabsTrigger>
+          <TabsTrigger value="coupons">Coupons</TabsTrigger>
         </TabsList>
 
         <TabsContent value="blocked-dates">
@@ -31,6 +33,10 @@ export default function AdminSettingsPage() {
 
         <TabsContent value="delivery">
           <DeliverySettingsTab />
+        </TabsContent>
+
+        <TabsContent value="coupons">
+          <CouponsTab />
         </TabsContent>
       </Tabs>
     </div>

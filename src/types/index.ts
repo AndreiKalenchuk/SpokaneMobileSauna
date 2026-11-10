@@ -91,16 +91,18 @@ export interface Faq {
   is_active: boolean;
 }
 
+/** Admin-only row (migration 023); customers see a CouponOffer via check_coupon(). */
 export interface Coupon {
   id: string;
   code: string;
   discount_type: 'percent' | 'fixed';
   discount_value: number;
-  min_order_amount: number | null;
+  /** Quantity issued; null = unlimited (legacy rows only — the admin form requires it). */
   max_uses: number | null;
+  /** Bookings holding the coupon (any status but cancelled), kept by a trigger. */
   current_uses: number;
-  starts_at: string | null;
-  expires_at: string | null;
+  /** Last valid day, Pacific time; null = never expires (legacy rows only). */
+  expires_on: string | null;
   is_active: boolean;
   created_at: string;
 }

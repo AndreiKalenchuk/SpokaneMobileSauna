@@ -3,7 +3,7 @@
 -- =============================================================================
 INSERT INTO products (id, name, slug, description, type, base_price, image_url, is_active, sort_order) VALUES
   ('a1b2c3d4-0001-4000-8000-000000000001', 'Mobile Sauna 6 Person', 'mobile-sauna-6-person',
-   'Premium wood-fired cedar sauna delivered to your location. Seats 6. Includes bucket, ladle, thermometer, and firewood for 1hr session.',
+   'Premium wood-fired cedar sauna delivered to your location. Seats up to 6. Includes bucket, ladle, thermometer, and firewood for 1hr session.',
    'primary', 229.00, '/gallery/exterior/exterior-1.jpg', true, 1),
 
   ('a1b2c3d4-0002-4000-8000-000000000002', 'Cold Plunge Tub', 'cold-plunge-tub',
@@ -124,7 +124,7 @@ INSERT INTO faqs (question, answer, category, sort_order) VALUES
 -- Using the Sauna
 INSERT INTO faqs (question, answer, category, sort_order) VALUES
   ('How many people can fit?',
-   'The sauna comfortably seats 6 adults.',
+   'The sauna comfortably seats up to 6 adults.',
    'Using the Sauna', 1),
   ('How hot does it get?',
    'Our wood-fired sauna reaches 150–200°F (65–93°C). You control the temperature by adjusting the vent and adding water to the stones.',
@@ -151,9 +151,10 @@ INSERT INTO faqs (question, answer, category, sort_order) VALUES
 -- =============================================================================
 -- Coupons
 -- =============================================================================
-INSERT INTO coupons (code, discount_type, discount_value, max_uses, is_active) VALUES
-  ('frends50', 'percent', 50.00, NULL, true),
-  ('frends-50', 'fixed', 50.00, NULL, true);
+-- Local-dev examples only; real codes are created in Admin → Settings → Coupons
+INSERT INTO coupons (code, discount_type, discount_value, max_uses, expires_on, is_active) VALUES
+  ('DEV-PERCENT10', 'percent', 10.00, 5, '2099-12-31', true),
+  ('DEV-FIXED25', 'fixed', 25.00, 5, '2099-12-31', true);
 
 -- =============================================================================
 -- Gallery Images (real photos from public/gallery)

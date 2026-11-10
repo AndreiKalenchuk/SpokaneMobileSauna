@@ -37,6 +37,7 @@ type ConfirmationBooking = Pick<
   | 'delivery_distance_miles'
   | 'fulfillment_fee'
   | 'subtotal'
+  | 'discount_amount'
   | 'tax_amount'
   | 'total_amount'
 > & {
@@ -51,17 +52,8 @@ async function fetchConfirmation(id: string): Promise<ConfirmationBooking | null
   const { data, error } = await supabase.rpc('get_booking_confirmation', {
     p_booking_id: id,
   })
-  if (!error) return data as ConfirmationBooking | null
-
-  // PGRST202 = function missing, i.e. migration 020 not applied yet: legacy read
-  if (error.code !== 'PGRST202') throw error
-  const { data: legacy, error: legacyError } = await supabase
-    .from('bookings')
-    .select('*')
-    .eq('id', id)
-    .single()
-  if (legacyError) throw legacyError
-  return { ...(legacy as Booking), items: [] }
+  if (error) throw error
+  return data as ConfirmationBooking | null
 }
 
 function formatCurrency(amount: number): string {
@@ -303,6 +295,14 @@ export default function BookingConfirmationPage() {
                           <span className="text-muted-foreground">Subtotal</span>
                           <span>{formatCurrency(booking.subtotal)}</span>
                         </div>
+                        {Number(booking.discount_amount) > 0 && (
+                          <div className="flex justify-between text-sm mt-1">
+                            <span className="text-muted-foreground">Discount</span>
+                            <span className="text-green-700">
+                              -{formatCurrency(Number(booking.discount_amount))}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-sm mt-1">
                           <span className="text-muted-foreground">Tax</span>
                           <span>{formatCurrency(booking.tax_amount)}</span>

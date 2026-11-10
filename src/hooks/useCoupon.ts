@@ -1,27 +1,27 @@
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import type { Coupon } from '../types';
+import { normalizeCouponCode } from '../lib/coupons';
+import type { CouponCheck } from '../lib/coupons';
+
+/**
+ * Checks one code through check_coupon() (migration 023) — anon can't read the
+ * coupons table, so codes, ids and usage counts are never listable. Uses left
+ * change as other customers book, so results are never served stale.
+ */
+export function couponQueryOptions(code: string) {
+  const normalized = normalizeCouponCode(code);
+  return queryOptions({
+    queryKey: ['coupon', normalized],
+    queryFn: async (): Promise<CouponCheck> => {
+      const { data, error } = await supabase.rpc('check_coupon', { p_code: normalized });
+      if (error) throw error;
+      return data as CouponCheck;
+    },
+    enabled: !!normalized,
+    staleTime: 0,
+  });
+}
 
 export function useCoupon(code: string) {
-  return useQuery<Coupon | null>({
-    queryKey: ['coupon', code],
-    queryFn: async () => {
-      if (!code.trim()) return null;
-
-      const { data, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('code', code.trim())
-        .eq('is_active', true)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-      }
-
-      return data;
-    },
-    enabled: !!code.trim(),
-  });
+  return useQuery(couponQueryOptions(code));
 }

@@ -33,6 +33,7 @@ type StatusFilter = 'all' | Booking['status']
 
 interface BookingWithItems extends Booking {
   booking_items: (BookingItem & { products: Product })[]
+  coupons: { code: string } | null
 }
 
 const statusColors: Record<Booking['status'], string> = {
@@ -53,7 +54,7 @@ export function PrivateBookingsView() {
     setLoading(true)
     const { data } = await supabase
       .from('bookings')
-      .select('*, booking_items(*, products(*))')
+      .select('*, booking_items(*, products(*)), coupons(code)')
       .order('rental_date', { ascending: false })
 
     setBookings((data as BookingWithItems[] | null) ?? [])
@@ -414,7 +415,9 @@ export function PrivateBookingsView() {
                   </div>
                   {selected.discount_amount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Discount</span>
+                      <span className="text-muted-foreground">
+                        Discount{selected.coupons ? ` (${selected.coupons.code})` : ''}
+                      </span>
                       <span className="text-green-600">
                         -{formatCurrency(selected.discount_amount)}
                       </span>
